@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Movix — Front-end đặt vé xem phim
 
 Front-end React cho hệ thống đặt vé xem phim Movix, dựng theo đặc tả
@@ -70,3 +71,6 @@ demo giao diện độc lập. Để nối với API thật (ví dụ
   react-router, vì môi trường build không có kết nối mạng để cài thêm
   package — khi tách ra dự án Vite/CRA thật, có thể thay bằng
   react-router-dom nếu muốn URL đổi theo từng trang.
+=======
+# Movix-Cinemax
+>>>>>>> 6f170f67eaa2ecb59ea7d0125cf6b0b156e4e04b
