@@ -46,10 +46,20 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
   const [step, setStep] = useState("seats"); // seats -> combo -> payment
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [comboQty, setComboQty] = useState({});
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState(params?.promoCode || "");
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState("");
+  const [availablePromos, setAvailablePromos] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("card");
+
+  useEffect(() => {
+    const list = dbService.getPromotions() || [];
+    const activeList = list.filter((p) => {
+      const st = (p.status || "").toLowerCase();
+      return st.includes("hoạt động") || st.includes("active") || !p.status;
+    });
+    setAvailablePromos(activeList);
+  }, []);
 
   // Build seat layout from room config or default
   const seatLayout = useMemo(() => {
@@ -107,25 +117,56 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
   const subtotal = seatTotal + comboTotal;
 
   // Xử lý mã khuyến mãi
-  const discountAmount = appliedPromo
-    ? Math.min((subtotal * appliedPromo.discountPercent) / 100, appliedPromo.maxDiscount || Infinity)
-    : 0;
+  const discountAmount = useMemo(() => {
+    if (!appliedPromo) return 0;
+    let disc = 0;
+    if (appliedPromo.discountPercent) {
+      disc = Math.round((subtotal * Number(appliedPromo.discountPercent)) / 100);
+      if (appliedPromo.maxDiscount) {
+        disc = Math.min(disc, Number(appliedPromo.maxDiscount));
+      }
+    } else if (appliedPromo.maxDiscount) {
+      disc = Math.min(Number(appliedPromo.maxDiscount), subtotal);
+    }
+    return Math.max(0, Math.min(disc, subtotal));
+  }, [appliedPromo, subtotal]);
 
   const grandTotal = Math.max(0, subtotal - discountAmount);
 
-  function handleApplyPromo(e) {
-    e.preventDefault();
-    if (!promoCode.trim()) return;
-
-    const res = dbService.validatePromo(promoCode, subtotal);
+  function applyCode(codeToTest) {
+    const code = (codeToTest || promoCode || "").trim();
+    if (!code) {
+      setPromoError("Vui lòng nhập hoặc chọn mã khuyến mãi!");
+      return;
+    }
+    const res = dbService.validatePromo(code, subtotal);
     if (res.valid) {
       setAppliedPromo(res.promo);
+      setPromoCode(res.promo.code);
       setPromoError("");
     } else {
       setAppliedPromo(null);
       setPromoError(res.message);
     }
   }
+
+  function handleApplyPromo(e) {
+    if (e) e.preventDefault();
+    applyCode(promoCode);
+  }
+
+  function handleRemovePromo() {
+    setAppliedPromo(null);
+    setPromoCode("");
+    setPromoError("");
+  }
+
+  // Tự động áp dụng nếu có promoCode từ params khi đến bước thanh toán
+  useEffect(() => {
+    if (step === "payment" && params?.promoCode && !appliedPromo && subtotal > 0) {
+      applyCode(params.promoCode);
+    }
+  }, [step, subtotal]);
 
   function changeQty(id, delta) {
     setComboQty((prev) => {
@@ -163,6 +204,7 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
       const newOrder = dbService.createOrder({
         userId: user?.id || `guest-${Date.now()}`,
         userName: user?.fullName || user?.name || "Khách hàng",
+        email: user?.email || "",
         phone: user?.phone || "0988776655",
         filmId: movie.id,
         filmTitle: movie.title,
@@ -396,30 +438,157 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
               <PaymentOptions method={paymentMethod} setMethod={setPaymentMethod} />
 
               {/* Mã giảm giá khuyến mãi (UC18) */}
-              <div style={{ marginTop: 24, padding: 16, background: "var(--ink-50)", borderRadius: 10 }}>
-                <h4 style={{ fontSize: 14, marginBottom: 8 }}>🏷️ Mã giảm giá khuyến mãi Movix</h4>
-                <form onSubmit={handleApplyPromo} style={{ display: "flex", gap: 8 }}>
-                  <input
-                    type="text"
-                    className="input-control"
-                    placeholder="Nhập mã (vd: MOVIX50, CHAOMOI, VIP20)..."
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                    style={{ textTransform: "uppercase" }}
-                  />
-                  <button type="submit" className="btn btn-secondary btn-sm">
-                    Áp dụng
-                  </button>
-                </form>
+              <div
+                style={{
+                  marginTop: 24,
+                  padding: 18,
+                  background: "var(--ink-50)",
+                  border: "1px solid var(--ink-200)",
+                  borderRadius: 12,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>🏷️</span> Mã giảm giá & Ưu đãi Movix
+                  </h4>
+                  {appliedPromo && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePromo}
+                      style={{
+                        fontSize: 12,
+                        color: "var(--red-500)",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✕ Hủy áp dụng
+                    </button>
+                  )}
+                </div>
 
-                {appliedPromo && (
-                  <div style={{ marginTop: 8, fontSize: 13, color: "var(--green-500)", fontWeight: 600 }}>
-                    ✓ Đã áp dụng mã {appliedPromo.code}: Giảm {appliedPromo.discountPercent}% (-{formatVnd(discountAmount)})
+                {appliedPromo ? (
+                  <div
+                    style={{
+                      background: "rgba(16, 185, 129, 0.1)",
+                      border: "1px solid var(--green-500)",
+                      borderRadius: 8,
+                      padding: "12px 14px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700, color: "var(--green-600)", fontSize: 14 }}>
+                        ✓ Đã kích hoạt mã: <span style={{ textDecoration: "underline" }}>{appliedPromo.code}</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: "var(--ink-700)", marginTop: 2 }}>
+                        {appliedPromo.title || appliedPromo.description} • Giảm {appliedPromo.discountPercent}%
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: "var(--green-600)" }}>
+                        -{formatVnd(discountAmount)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleApplyPromo} style={{ display: "flex", gap: 8 }}>
+                    <input
+                      type="text"
+                      className="input-control"
+                      placeholder="Nhập mã voucher (vd: MOVIX50, CHAOMOI, CINEVIP)..."
+                      value={promoCode}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value);
+                        setPromoError("");
+                      }}
+                      style={{ textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px" }}
+                    />
+                    <button type="submit" className="btn btn-primary btn-sm" style={{ padding: "0 18px", flexShrink: 0 }}>
+                      Áp dụng
+                    </button>
+                  </form>
+                )}
+
+                {promoError && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      padding: "8px 12px",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                      borderRadius: 6,
+                      fontSize: 13,
+                      color: "var(--red-500)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ✕ {promoError}
                   </div>
                 )}
-                {promoError && (
-                  <div style={{ marginTop: 8, fontSize: 13, color: "var(--red-500)" }}>
-                    ✕ {promoError}
+
+                {/* Danh sách voucher có sẵn để bấm chọn nhanh */}
+                {availablePromos.length > 0 && !appliedPromo && (
+                  <div style={{ marginTop: 14 }}>
+                    <div style={{ fontSize: 12, color: "var(--ink-500)", marginBottom: 8, fontWeight: 600 }}>
+                      💡 Hoặc chọn nhanh ưu đãi khả dụng:
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {availablePromos.slice(0, 4).map((p) => (
+                        <div
+                          key={p.id}
+                          onClick={() => applyCode(p.code)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 12px",
+                            background: "var(--ink-0)",
+                            border: "1px dashed var(--brand-300)",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand-600)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--brand-300)")}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span
+                              style={{
+                                background: "var(--brand-100)",
+                                color: "var(--brand-700)",
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                fontWeight: 800,
+                                fontSize: 12,
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              {p.code}
+                            </span>
+                            <span style={{ fontSize: 12.5, color: "var(--ink-700)" }}>
+                              {p.description || p.title}
+                            </span>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: "var(--brand-600)",
+                              whiteSpace: "nowrap",
+                              marginLeft: 8,
+                            }}
+                          >
+                            Áp dụng →
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

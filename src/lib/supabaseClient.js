@@ -8,6 +8,7 @@ import {
   INITIAL_USERS,
   INITIAL_COMBOFOODS,
   INITIAL_PROMOTIONS,
+  INITIAL_BANNERS,
   INITIAL_SHOWTIMES,
   INITIAL_COMMENTS,
   INITIAL_ORDERS,
@@ -15,6 +16,34 @@ import {
 
 const STORAGE_KEY_DB = "movix_db_v4";
 const STORAGE_KEY_CONFIG = "movix_supabase_config_v1";
+const STORAGE_KEY_AUTH = "movix_current_user_v2";
+
+export const authService = {
+  getCurrentUser() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_AUTH);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  },
+  setCurrentUser(user) {
+    if (!user) {
+      localStorage.removeItem(STORAGE_KEY_AUTH);
+    } else {
+      localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(user));
+    }
+  },
+  logout() {
+    localStorage.removeItem(STORAGE_KEY_AUTH);
+  },
+  isAdmin(user) {
+    return Boolean(user && (user.role === "admin" || user.role === "administrator"));
+  },
+};
 
 // 1. Quản lý cấu hình Supabase
 export function getSupabaseConfig() {
@@ -61,7 +90,79 @@ function initLocalDb() {
   const existing = localStorage.getItem(STORAGE_KEY_DB);
   if (existing) {
     try {
-      return JSON.parse(existing);
+      const db = JSON.parse(existing);
+      let changed = false;
+
+      // Bảo đảm mảng promotions luôn đầy đủ và có các mã mới nhất
+      if (!db.promotions || !Array.isArray(db.promotions) || db.promotions.length === 0) {
+        db.promotions = [...INITIAL_PROMOTIONS];
+        changed = true;
+      } else {
+        // Đồng bộ các mã mới nếu thiếu (ví dụ: CHAOMOI, VIP20, MOMO15)
+        for (const initP of INITIAL_PROMOTIONS) {
+          const foundIndex = db.promotions.findIndex(
+            (p) => p.code && p.code.trim().toUpperCase() === initP.code.toUpperCase()
+          );
+          if (foundIndex === -1) {
+            db.promotions.push(initP);
+            changed = true;
+          } else if (!db.promotions[foundIndex].bannerUrl || !db.promotions[foundIndex].title) {
+            db.promotions[foundIndex] = {
+              ...initP,
+              ...db.promotions[foundIndex],
+              bannerUrl: initP.bannerUrl,
+              title: initP.title,
+              category: initP.category,
+            };
+            changed = true;
+          }
+        }
+      }
+
+      // Bảo đảm mảng banners quảng cáo luôn sẵn sàng
+      if (!db.banners || !Array.isArray(db.banners) || db.banners.length === 0) {
+        db.banners = [...INITIAL_BANNERS];
+        changed = true;
+      }
+
+      // Bảo đảm mảng users luôn có đầy đủ tài khoản mẫu (Admin & Khách hàng)
+      if (!db.users || !Array.isArray(db.users) || db.users.length === 0) {
+        db.users = [...INITIAL_USERS];
+        changed = true;
+      } else {
+        for (const initU of INITIAL_USERS) {
+          const idx = db.users.findIndex(
+            (u) => u.id === initU.id || u.email?.toLowerCase() === initU.email?.toLowerCase()
+          );
+          if (idx === -1) {
+            db.users.push(initU);
+            changed = true;
+          } else {
+            // Đảm bảo mật khẩu và vai trò chuẩn xác
+            if (!db.users[idx].password) {
+              db.users[idx].password = initU.password || "123";
+              changed = true;
+            }
+            if (initU.role === "admin" && db.users[idx].role !== "admin") {
+              db.users[idx].role = "admin";
+              changed = true;
+            }
+            // Chuẩn hoá phân quyền: Chỉ có 'Quản trị viên' và 'Thành viên'
+            if (db.users[idx].role === "admin") {
+              db.users[idx].tier = "Quản trị viên";
+            } else {
+              db.users[idx].role = "customer";
+              db.users[idx].tier = "Thành viên";
+            }
+          }
+        }
+      }
+
+      if (changed) {
+        localStorage.setItem(STORAGE_KEY_DB, JSON.stringify(db));
+      }
+
+      return db;
     } catch (e) {
       console.error("Lỗi parse DB từ localStorage, khởi tạo lại:", e);
     }
@@ -76,6 +177,7 @@ function initLocalDb() {
     users: INITIAL_USERS,
     combofoods: INITIAL_COMBOFOODS,
     promotions: INITIAL_PROMOTIONS,
+    banners: INITIAL_BANNERS,
     showtimes: INITIAL_SHOWTIMES,
     comments: INITIAL_COMMENTS,
     orders: INITIAL_ORDERS,
@@ -248,6 +350,16 @@ export const dbService = {
   getUser(id) {
     return getDb().users.find((u) => u.id === id);
   },
+  getUserByIdentity(identity) {
+    if (!identity) return null;
+    const clean = identity.trim().toLowerCase();
+    return (getDb().users || []).find(
+      (u) =>
+        u.email?.toLowerCase() === clean ||
+        u.username?.toLowerCase() === clean ||
+        u.phone === clean
+    );
+  },
   addUser(data) {
     const db = getDb();
     const newUser = {
@@ -333,6 +445,7 @@ export const dbService = {
       id: `pr-${Date.now()}`,
       usedCount: 0,
       status: "Đang hoạt động",
+      category: "Vé xem phim",
       ...data,
     };
     db.promotions.unshift(newPromo);
@@ -349,20 +462,86 @@ export const dbService = {
     db.promotions = db.promotions.filter((p) => p.id !== id);
     saveDb(db);
   },
-  validatePromo(code, subtotal) {
+  validatePromo(code, subtotal = 0) {
     const db = getDb();
-    const promo = (db.promotions || []).find(
-      (p) => p.code.toUpperCase() === code.trim().toUpperCase() && p.status === "Đang hoạt động"
-    );
-    if (!promo) return { valid: false, message: "Mã khuyến mãi không hợp lệ hoặc đã hết hạn!" };
-    if (promo.usedCount >= promo.usageLimit) {
-      return { valid: false, message: "Mã này đã hết lượt sử dụng!" };
+    const cleanCode = (code || "").trim().toUpperCase();
+    if (!cleanCode) {
+      return { valid: false, message: "Vui lòng nhập mã khuyến mãi!" };
     }
-    const discountAmount = Math.min(
-      (subtotal * promo.discountPercent) / 100,
-      promo.maxDiscount || Infinity
-    );
-    return { valid: true, promo, discountAmount };
+
+    const promo = (db.promotions || []).find((p) => {
+      if (!p.code) return false;
+      const matchCode = p.code.trim().toUpperCase() === cleanCode;
+      const statusLower = (p.status || "").toLowerCase();
+      const isActive = statusLower.includes("hoạt động") || statusLower.includes("active") || !p.status;
+      return matchCode && isActive;
+    });
+
+    if (!promo) {
+      return { valid: false, message: `Mã khuyến mãi "${cleanCode}" không tồn tại hoặc đã ngưng áp dụng!` };
+    }
+
+    // Kiểm tra thời hạn
+    const today = new Date().toISOString().slice(0, 10);
+    if (promo.startDate && promo.startDate > today) {
+      return { valid: false, message: `Mã "${cleanCode}" chỉ có hiệu lực từ ngày ${promo.startDate}!` };
+    }
+    if (promo.endDate && promo.endDate < today) {
+      return { valid: false, message: `Mã "${cleanCode}" đã hết hạn sử dụng vào ngày ${promo.endDate}!` };
+    }
+
+    // Kiểm tra lượt dùng
+    if (promo.usageLimit && (promo.usedCount || 0) >= promo.usageLimit) {
+      return { valid: false, message: `Mã "${cleanCode}" đã đạt giới hạn lượt sử dụng trên hệ thống!` };
+    }
+
+    // Tính toán số tiền được giảm
+    let discountAmount = 0;
+    if (promo.discountPercent) {
+      discountAmount = Math.round((subtotal * Number(promo.discountPercent)) / 100);
+      if (promo.maxDiscount) {
+        discountAmount = Math.min(discountAmount, Number(promo.maxDiscount));
+      }
+    } else if (promo.maxDiscount) {
+      discountAmount = Math.min(Number(promo.maxDiscount), subtotal);
+    }
+
+    discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
+
+    return {
+      valid: true,
+      promo,
+      discountAmount,
+      message: `Áp dụng thành công mã ${promo.code}: Giảm ${promo.discountPercent || 0}%`,
+    };
+  },
+
+  // Banners Quảng cáo & Khuyến mãi
+  getBanners() {
+    return getDb().banners || [];
+  },
+  addBanner(data) {
+    const db = getDb();
+    const newBanner = {
+      id: `bn-${Date.now()}`,
+      badge: "ƯU ĐÃI",
+      badgeColor: "var(--brand-600)",
+      bgGradient: "linear-gradient(135deg, #1e1b4b, #312e81)",
+      ...data,
+    };
+    db.banners.unshift(newBanner);
+    saveDb(db);
+    return newBanner;
+  },
+  updateBanner(id, data) {
+    const db = getDb();
+    db.banners = (db.banners || []).map((b) => (b.id === id ? { ...b, ...data } : b));
+    saveDb(db);
+  },
+  deleteBanner(id) {
+    const db = getDb();
+    db.banners = (db.banners || []).filter((b) => b.id !== id);
+    saveDb(db);
   },
 
   // Combo foods

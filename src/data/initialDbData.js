@@ -465,7 +465,7 @@ export const INITIAL_USERS = [
     password: "123",
     status: "active",
     point: 9999,
-    tier: "Kim Cương"
+    tier: "Quản trị viên"
   },
   {
     id: "usr-1",
@@ -477,7 +477,7 @@ export const INITIAL_USERS = [
     password: "123",
     status: "active",
     point: 450,
-    tier: "Vàng"
+    tier: "Thành viên"
   },
   {
     id: "usr-2",
@@ -489,7 +489,7 @@ export const INITIAL_USERS = [
     password: "123",
     status: "active",
     point: 220,
-    tier: "Bạc"
+    tier: "Thành viên"
   },
   {
     id: "usr-3",
@@ -552,54 +552,169 @@ export const INITIAL_PROMOTIONS = [
   {
     id: "pr-1",
     code: "MOVIX50",
-    description: "Giảm 50% vé xem phim cho khách hàng mới (tối đa 50.000đ)",
+    title: "Thứ 4 Vui Vẻ - Giảm 50% Vé Xem Phim",
+    description: "Giảm 50% vé xem phim (tối đa 50.000đ) cho khách hàng mới và suất chiếu giữa tuần",
     discountPercent: 50,
     maxDiscount: 50000,
-    startDate: "2026-08-01",
+    startDate: "2026-01-01",
     endDate: "2026-12-31",
-    usageLimit: 1000,
+    usageLimit: 2000,
     usedCount: 285,
     status: "Đang hoạt động",
-    filmTitle: "Tất cả phim"
+    category: "Vé xem phim",
+    filmTitle: "Tất cả phim",
+    bannerUrl: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&q=80"
   },
   {
     id: "pr-2",
-    code: "CINEVIP",
-    description: "Ưu đãi giảm 30.000đ cho phòng chiếu IMAX / ScreenX",
-    discountPercent: 25,
+    code: "CHAOMOI",
+    title: "Chào Bạn Mới - Tặng Ngay 30K",
+    description: "Giảm trực tiếp 30.000đ cho đơn đặt vé đầu tiên trên nền tảng Movix",
+    discountPercent: 30,
     maxDiscount: 30000,
-    startDate: "2026-08-15",
-    endDate: "2026-11-30",
-    usageLimit: 800,
-    usedCount: 420,
+    startDate: "2026-01-01",
+    endDate: "2026-12-31",
+    usageLimit: 3000,
+    usedCount: 512,
     status: "Đang hoạt động",
-    filmTitle: "Avatar: The Way of Water"
+    category: "Thành viên",
+    filmTitle: "Tất cả phim",
+    bannerUrl: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80"
   },
   {
     id: "pr-3",
+    code: "CINEVIP",
+    title: "Trải Nghiệm Đỉnh Cao IMAX Laser & VIP",
+    description: "Ưu đãi giảm 30.000đ cho phòng chiếu chuẩn IMAX Laser, 3D và ScreenX",
+    discountPercent: 25,
+    maxDiscount: 30000,
+    startDate: "2026-01-01",
+    endDate: "2026-12-31",
+    usageLimit: 1500,
+    usedCount: 420,
+    status: "Đang hoạt động",
+    category: "Vé xem phim",
+    filmTitle: "Avatar, Dune và phim IMAX",
+    bannerUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80"
+  },
+  {
+    id: "pr-4",
     code: "HSSV20",
-    description: "Đồng giá vé 55K hoặc giảm 20% cho Học sinh - Sinh viên",
+    title: "Đồng Giá Vé Học Sinh - Sinh Viên",
+    description: "Đồng giá vé hoặc giảm 20% (tối đa 40.000đ) cho học sinh, sinh viên toàn quốc",
     discountPercent: 20,
     maxDiscount: 40000,
     startDate: "2026-01-01",
     endDate: "2026-12-31",
-    usageLimit: 3000,
+    usageLimit: 5000,
     usedCount: 1640,
     status: "Đang hoạt động",
-    filmTitle: "Tất cả phim"
+    category: "Thành viên",
+    filmTitle: "Tất cả phim",
+    bannerUrl: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&q=80"
   },
   {
-    id: "pr-4",
+    id: "pr-5",
     code: "WEEKENDPOP",
-    description: "Tặng ngay 20.000đ khi đặt kèm Combo Bắp Nước cuối tuần",
+    title: "Tiệc Bắp Nước Cuối Tuần",
+    description: "Giảm 15% (tối đa 25.000đ) khi đặt vé kèm các Combo Bắp Nước thứ Bảy & Chủ Nhật",
     discountPercent: 15,
-    maxDiscount: 20000,
-    startDate: "2026-09-01",
-    endDate: "2026-10-31",
-    usageLimit: 500,
-    usedCount: 110,
+    maxDiscount: 25000,
+    startDate: "2026-01-01",
+    endDate: "2026-12-31",
+    usageLimit: 1000,
+    usedCount: 195,
     status: "Đang hoạt động",
-    filmTitle: "Tất cả phim"
+    category: "Combo Bắp Nước",
+    filmTitle: "Tất cả phim",
+    bannerUrl: "https://images.unsplash.com/photo-1585647347483-22b66260dfff?auto=format&fit=crop&w=1200&q=80"
+  },
+  {
+    id: "pr-6",
+    code: "VIP20",
+    title: "Khách Hàng Thân Thiết VIP",
+    description: "Giảm 20% tối đa 35.000đ cho mọi đơn đặt vé tại tất cả các rạp liên kết",
+    discountPercent: 20,
+    maxDiscount: 35000,
+    startDate: "2026-01-01",
+    endDate: "2026-12-31",
+    usageLimit: 2500,
+    usedCount: 860,
+    status: "Đang hoạt động",
+    category: "Thành viên",
+    filmTitle: "Tất cả phim",
+    bannerUrl: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1200&q=80"
+  },
+  {
+    id: "pr-7",
+    code: "MOMO15",
+    title: "Thanh Toán MoMo - Giảm Liền 15K",
+    description: "Giảm 15% (tối đa 15.000đ) khi thanh toán trực tuyến qua Ví điện tử MoMo",
+    discountPercent: 15,
+    maxDiscount: 15000,
+    startDate: "2026-01-01",
+    endDate: "2026-12-31",
+    usageLimit: 3000,
+    usedCount: 650,
+    status: "Đang hoạt động",
+    category: "Ví điện tử & Ngân hàng",
+    filmTitle: "Tất cả phim",
+    bannerUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80"
+  }
+];
+
+export const INITIAL_BANNERS = [
+  {
+    id: "bn-1",
+    title: "THỨ 4 VUI VẺ - ĐỒNG GIÁ 55.000Đ",
+    tagline: "ĐẠI TIỆC ĐIỆN ẢNH GIỮA TUẦN",
+    description: "Giảm đến 50% vé xem phim tại mọi cụm rạp đối tác CGV, BHD, Lotte, Beta trên toàn quốc.",
+    promoCode: "MOVIX50",
+    badge: "SIÊU ƯU ĐÃI",
+    badgeColor: "var(--red-500)",
+    bgGradient: "linear-gradient(135deg, #7f1d1d, #1e1b4b)",
+    imageUrl: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&q=80",
+    buttonText: "Nhận mã ngay",
+    actionType: "promo"
+  },
+  {
+    id: "bn-2",
+    title: "CHÀO BẠN MỚI - TẶNG NGAY 30.000Đ",
+    tagline: "ƯU ĐÃI ĐẶT VÉ ĐẦU TIÊN",
+    description: "Nhập mã CHAOMOI khi thanh toán để được giảm ngay 30.000đ trên tổng hóa đơn đặt vé.",
+    promoCode: "CHAOMOI",
+    badge: "MỚI NHẤT",
+    badgeColor: "var(--brand-600)",
+    bgGradient: "linear-gradient(135deg, #1e1b4b, #312e81)",
+    imageUrl: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80",
+    buttonText: "Lấy voucher 30K",
+    actionType: "promo"
+  },
+  {
+    id: "bn-3",
+    title: "TRẢI NGHIỆM ĐỈNH CAO IMAX LASER & SCREENX",
+    tagline: "ÂM THANH VÒM DOLBY ATMOS & MÀN HÌNH KHỔNG LỒ",
+    description: "Giảm ngay 30.000đ với mã CINEVIP khi trải nghiệm các phòng chiếu đặc biệt chuẩn quốc tế.",
+    promoCode: "CINEVIP",
+    badge: "VIP EXPERIENCE",
+    badgeColor: "#d97706",
+    bgGradient: "linear-gradient(135deg, #451a03, #18181b)",
+    imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80",
+    buttonText: "Khám phá phòng chiếu VIP",
+    actionType: "promo"
+  },
+  {
+    id: "bn-4",
+    title: "COMBO BẮP NƯỚC GIẢM 15% CUỐI TUẦN",
+    tagline: "VỊ BẮP CARAMEL THƠM LỪNG & PEPSI MÁT LẠNH",
+    description: "Áp dụng mã WEEKENDPOP để tận hưởng trọn vẹn từng khoảnh khắc phim ảnh với combo bắp nước siêu tiết kiệm.",
+    promoCode: "WEEKENDPOP",
+    badge: "COMBO HOT",
+    badgeColor: "#059669",
+    bgGradient: "linear-gradient(135deg, #064e3b, #111827)",
+    imageUrl: "https://images.unsplash.com/photo-1585647347483-22b66260dfff?auto=format&fit=crop&w=1200&q=80",
+    buttonText: "Chọn bắp nước",
+    actionType: "promo"
   }
 ];
 

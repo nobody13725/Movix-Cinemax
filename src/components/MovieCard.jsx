@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FALLBACK_POSTER } from "../utils/imageFallback";
 
-export default function MovieCard({ movie, go }) {
+export default function MovieCard({ movie, go, extraParams = {} }) {
   const [imgSrc, setImgSrc] = useState(movie.posterUrl || movie.thumbnail || FALLBACK_POSTER);
   const [imgFailed, setImgFailed] = useState(false);
 
@@ -14,7 +14,7 @@ export default function MovieCard({ movie, go }) {
   };
 
   return (
-    <div className="movie-card" onClick={() => go("movie", { id: movie.id })}>
+    <div className="movie-card" onClick={() => go("movie", { id: movie.id, ...extraParams })}>
       <div
         className="poster"
         style={{

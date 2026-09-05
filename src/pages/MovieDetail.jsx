@@ -129,10 +129,31 @@ export default function MovieDetail({ go, goBack, params, user }) {
           </div>
           <p className="detail-desc">{film.description}</p>
 
+          {params?.promoCode && (
+            <div
+              style={{
+                marginTop: 14,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(6px)",
+                padding: "6px 14px",
+                borderRadius: 8,
+                border: "1px dashed rgba(255,255,255,0.5)",
+                color: "#fef08a",
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              <span>🏷️</span> Đang kèm voucher: {params.promoCode}
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: 12, marginTop: 22, flexWrap: "wrap" }}>
             <button
               className="btn btn-primary"
-              onClick={() => go("showtimes", { movieId: film.id })}
+              onClick={() => go("showtimes", { movieId: film.id, promoCode: params?.promoCode })}
             >
               🎟️ Đặt vé ngay
             </button>

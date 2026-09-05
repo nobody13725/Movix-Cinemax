@@ -8,6 +8,7 @@ export default function Navbar({ route, go, user, onLogout }) {
     { key: "showtimes", label: "Lịch chiếu" },
     { key: "movies", label: "Phim" },
     { key: "cinemas", label: "Rạp" },
+    { key: "promotions", label: "Khuyến mãi" },
   ];
 
   function submitSearch(e) {
@@ -45,25 +46,63 @@ export default function Navbar({ route, go, user, onLogout }) {
         </form>
 
         <div className="nav-right">
-          {/* Quick Admin Access Button */}
-          <button
-            className="btn btn-sm"
-            style={{
-              background: "var(--brand-50)",
-              color: "var(--brand-700)",
-              border: "1px solid var(--brand-200)",
-              fontWeight: 700,
-            }}
-            onClick={() => go("admin")}
-            title="Mở Bảng điều khiển Quản trị hệ thống (UC12 - UC20)"
-          >
-            ⚡ Quản trị Admin
-          </button>
+          {/* Quick Admin Access Button - ONLY VISIBLE TO LOGGED IN ADMIN */}
+          {user && (user.role === "admin" || user.role === "administrator") && (
+            <button
+              className="btn btn-sm"
+              style={{
+                background: "var(--brand-50)",
+                color: "var(--brand-700)",
+                border: "1px solid var(--brand-300)",
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+              onClick={() => go("admin")}
+              title="Bảng điều khiển Quản trị hệ thống (Chỉ dành cho Admin)"
+            >
+              🛡️ Quản trị Admin
+            </button>
+          )}
 
           {user ? (
             <>
-              <button className="btn btn-ghost" onClick={() => go("profile")}>
-                👤 {user.name || user.fullName}
+              <button
+                className="btn btn-ghost"
+                onClick={() => go("profile")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                title="Hồ sơ tài khoản & Vé của bạn"
+              >
+                <span>👤 {user.name || user.fullName}</span>
+                {user.role === "admin" ? (
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      background: "var(--brand-700)",
+                      color: "#fff",
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      fontWeight: 700,
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    ADMIN
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      background: "var(--brand-50)",
+                      color: "var(--brand-700)",
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Thành viên
+                  </span>
+                )}
               </button>
               <button className="btn btn-secondary btn-sm" onClick={onLogout}>
                 Đăng xuất

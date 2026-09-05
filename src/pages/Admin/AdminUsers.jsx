@@ -33,7 +33,7 @@ export default function AdminUsers() {
       fullName: "",
       email: "",
       phone: "",
-      role: "member",
+      role: "customer",
       status: "Hoạt động",
       address: "",
     });
@@ -47,7 +47,7 @@ export default function AdminUsers() {
       fullName: u.fullName || "",
       email: u.email || "",
       phone: u.phone || "",
-      role: u.role || "member",
+      role: u.role === "admin" ? "admin" : "customer",
       status: u.status || "Hoạt động",
       address: u.address || "",
     });
@@ -310,10 +310,10 @@ export default function AdminUsers() {
                   <select
                     className="input-control"
                     style={{ width: "100%" }}
-                    value={formData.role}
+                    value={formData.role === "admin" ? "admin" : "customer"}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   >
-                    <option value="member">Thành viên (Member)</option>
+                    <option value="customer">Thành viên</option>
                     <option value="admin">Quản trị viên (Admin)</option>
                   </select>
                 </div>

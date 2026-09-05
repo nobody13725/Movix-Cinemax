@@ -12,19 +12,15 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import Profile from "./pages/Profile.jsx";
+import Promotions from "./pages/Promotions.jsx";
 import AdminLayout from "./pages/Admin/AdminLayout.jsx";
+import { authService } from "./lib/supabaseClient.js";
 
 export default function App() {
   const [route, setRoute] = useState({ name: "home", params: {} });
   const historyRef = useRef([{ name: "home", params: {} }]);
-  const [user, setUser] = useState({
-    id: "usr-admin-01",
-    fullName: "Quản trị viên Movix",
-    name: "Quản trị viên",
-    email: "admin@movix.vn",
-    role: "admin",
-    status: "Hoạt động",
-  });
+  // Khôi phục phiên đăng nhập từ localStorage thay vì cố định tài khoản Admin
+  const [user, setUser] = useState(() => authService.getCurrentUser());
   const [toast, setToast] = useState("");
 
   // Đồng bộ với nút Back/Forward của trình duyệt
@@ -89,11 +85,15 @@ export default function App() {
 
   function onLogin(u) {
     setUser(u);
-    showToast(`Chào mừng, ${u.fullName || u.name}!`);
+    authService.setCurrentUser(u);
+    const roleTitle = authService.isAdmin(u) ? "Quản trị viên (Admin)" : "Thành viên Movix";
+    showToast(`Đăng nhập thành công: ${u.fullName || u.name} (${roleTitle})`);
   }
 
   function onLogout() {
+    authService.logout();
     setUser(null);
+    showToast("Đã đăng xuất tài khoản an toàn.");
     go("home");
   }
 
@@ -125,6 +125,9 @@ export default function App() {
     case "cinemas":
       page = <Cinemas go={go} goBack={goBack} />;
       break;
+    case "promotions":
+      page = <Promotions go={go} goBack={goBack} params={route.params} />;
+      break;
     case "seatSelect":
       page = <BookingFlow go={go} goBack={goBack} params={route.params} user={user} />;
       break;
@@ -141,10 +144,67 @@ export default function App() {
       page = <ForgotPassword go={go} goBack={goBack} />;
       break;
     case "profile":
-      page = <Profile go={go} goBack={goBack} user={user} />;
+      page = <Profile go={go} goBack={goBack} user={user} onLogout={onLogout} />;
       break;
     case "admin":
-      page = <AdminLayout go={go} goBack={goBack} onExitAdmin={() => go("home")} user={user} />;
+      // Phân quyền chặt chẽ: Chỉ tài khoản Admin mới được truy cập Bảng quản trị
+      if (!user) {
+        page = (
+          <div className="section container" style={{ maxWidth: 520, margin: "60px auto", textAlign: "center" }}>
+            <div className="card" style={{ padding: 36, boxShadow: "0 10px 25px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🛡️</div>
+              <h2 style={{ fontSize: 20, marginBottom: 10, color: "var(--ink-900)" }}>
+                Yêu cầu đăng nhập Quản trị viên
+              </h2>
+              <p style={{ fontSize: 14.5, color: "var(--ink-600)", lineHeight: 1.6, marginBottom: 24 }}>
+                Khu vực Quản trị hệ thống Movix chứa các dữ liệu bảo mật và cấu hình cơ sở dữ liệu. Vui lòng đăng nhập bằng tài khoản Quản trị viên (Admin) để tiếp tục.
+              </p>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                <button className="btn btn-secondary" onClick={() => go("home")}>
+                  ← Về trang chủ
+                </button>
+                <button className="btn btn-primary" onClick={() => go("login", { redirect: "admin" })}>
+                  Đăng nhập Admin
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      } else if (!authService.isAdmin(user)) {
+        page = (
+          <div className="section container" style={{ maxWidth: 560, margin: "60px auto", textAlign: "center" }}>
+            <div className="card" style={{ padding: 36, border: "1px solid #fecaca", background: "#fff5f5" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
+              <h2 style={{ fontSize: 20, marginBottom: 10, color: "#991b1b" }}>
+                Truy cập bị từ chối (403 Forbidden)
+              </h2>
+              <p style={{ fontSize: 14.5, color: "#7f1d1d", lineHeight: 1.6, marginBottom: 14 }}>
+                Tài khoản <strong>{user.fullName || user.name}</strong> ({user.email}) hiện có vai trò là <strong>Thành viên / Khách hàng</strong>.
+              </p>
+              <p style={{ fontSize: 13.5, color: "var(--ink-600)", lineHeight: 1.6, marginBottom: 24 }}>
+                Bạn không có quyền truy cập vào Bảng điều khiển Quản trị viên. Hãy quay lại trang chủ hoặc chuyển đổi sang tài khoản Quản trị viên.
+              </p>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                <button className="btn btn-secondary" onClick={() => go("home")}>
+                  ← Về trang chủ
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    authService.logout();
+                    setUser(null);
+                    go("login", { redirect: "admin" });
+                  }}
+                >
+                  Đăng nhập tài khoản Admin khác
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      } else {
+        page = <AdminLayout go={go} goBack={goBack} onExitAdmin={() => go("home")} user={user} />;
+      }
       break;
     default:
       page = <Home go={go} goBack={goBack} />;

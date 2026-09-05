@@ -13,6 +13,13 @@ export default function Register({ go, goBack, onLogin }) {
     if (!form.email.trim() || !form.email.includes("@")) return setError("Email không hợp lệ");
     if (form.password.length < 6) return setError("Mật khẩu cần tối thiểu 6 ký tự");
     if (form.password !== form.confirm) return setError("Mật khẩu xác nhận không khớp");
+
+    // Kiểm tra email đã được đăng ký chưa
+    const existing = dbService.getUserByIdentity(form.email.trim());
+    if (existing) {
+      return setError("Email này đã được đăng ký tài khoản. Vui lòng chọn Đăng nhập hoặc sử dụng email khác.");
+    }
+
     setError("");
     setStage(2);
   }
@@ -28,7 +35,9 @@ export default function Register({ go, goBack, onLogin }) {
       email: form.email.trim(),
       phone: form.phone || "0912345678",
       password: form.password,
-      role: "member",
+      role: "customer",
+      tier: "Thành viên",
+      point: 50,
       status: "Hoạt động",
     });
 

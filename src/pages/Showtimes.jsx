@@ -57,6 +57,34 @@ export default function Showtimes({ go, params }) {
         </div>
       </div>
 
+      {params?.promoCode && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.1))",
+            border: "1px dashed var(--brand-500)",
+            borderRadius: 10,
+            padding: "10px 16px",
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 16 }}>🏷️</span>
+            <span style={{ fontSize: 13.5, color: "var(--ink-800)" }}>
+              Ưu đãi kèm theo: <strong style={{ color: "var(--brand-700)" }}>{params.promoCode}</strong> (Sẽ tự động áp dụng khi thanh toán)
+            </span>
+          </div>
+          <button
+            onClick={() => go("promotions")}
+            style={{ background: "none", border: "none", color: "var(--brand-600)", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
+          >
+            Đổi mã khác →
+          </button>
+        </div>
+      )}
+
       {/* Date Strip */}
       <div className="date-strip" style={{ marginBottom: 20 }}>
         {dates.map((d) => (
@@ -299,6 +327,7 @@ export default function Showtimes({ go, params }) {
                             showtimeId: st.id,
                             time: st.startTime,
                             date: activeDate,
+                            promoCode: params?.promoCode,
                           })
                         }
                       >

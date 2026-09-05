@@ -25,6 +25,24 @@ export default function AdminLayout({ user, onExitAdmin, go, goBack }) {
     }
   };
 
+  // Bảo vệ phân quyền chặt chẽ bên trong AdminLayout
+  if (!user || (user.role !== "admin" && user.role !== "administrator")) {
+    return (
+      <div style={{ padding: 40, textAlign: "center", background: "#f8fafc", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ maxWidth: 480, background: "white", padding: 36, borderRadius: 12, border: "1px solid #fee2e2", boxShadow: "0 10px 25px rgba(0,0,0,0.05)" }}>
+          <div style={{ fontSize: 44, marginBottom: 12 }}>🚫</div>
+          <h2 style={{ fontSize: 20, color: "#991b1b", marginBottom: 8 }}>Không có quyền truy cập Quản trị</h2>
+          <p style={{ fontSize: 14, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>
+            Trang này chỉ dành riêng cho tài khoản Quản trị viên (Admin). Bạn không được phép xem hoặc sửa đổi cơ sở dữ liệu hệ thống.
+          </p>
+          <button className="btn btn-primary" onClick={handleExit}>
+            ← Quay lại trang chủ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const navItems = [
     { id: "movies", label: "Quản lý phim", icon: "🎬", uc: "UC12" },
     { id: "cinemas", label: "Quản lý rạp chiếu", icon: "🏢", uc: "UC13" },

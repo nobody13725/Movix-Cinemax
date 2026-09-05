@@ -13,10 +13,11 @@ const STATUS_LABEL = {
   done: "Đã xem",
 };
 
-export default function Profile({ go, user }) {
+export default function Profile({ go, user, onLogout }) {
   const [tab, setTab] = useState("history"); // history | info | reviews
   const [orders, setOrders] = useState([]);
   const [comments, setComments] = useState([]);
+  const [allOrdersCount, setAllOrdersCount] = useState(0);
   const [info, setInfo] = useState({
     name: user?.fullName || user?.name || "",
     email: user?.email || user?.identity || "",
@@ -25,14 +26,40 @@ export default function Profile({ go, user }) {
   const [saved, setSaved] = useState(false);
 
   const loadData = () => {
-    setOrders(dbService.getOrders());
-    setComments(dbService.getComments());
+    if (!user) {
+      setOrders([]);
+      setComments([]);
+      return;
+    }
+    const allOrders = dbService.getOrders();
+    const allComments = dbService.getComments();
+    setAllOrdersCount(allOrders.length);
+
+    // Phân quyền & Cô lập dữ liệu: Chỉ hiển thị vé của chính tài khoản này
+    const userOrders = allOrders.filter((o) => {
+      if (o.userId && user.id && o.userId === user.id) return true;
+      if (user.email && o.email && o.email.toLowerCase() === user.email.toLowerCase()) return true;
+      if (user.phone && o.phone && o.phone === user.phone) return true;
+      if (user.fullName && o.userName && o.userName.trim().toLowerCase() === user.fullName.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    // Chỉ hiển thị bình luận / đánh giá do chính người dùng này gửi
+    const userComments = allComments.filter((c) => {
+      if (c.userId && user.id && c.userId === user.id) return true;
+      if (user.fullName && c.userName && c.userName.trim().toLowerCase() === user.fullName.trim().toLowerCase()) return true;
+      if (user.username && c.userName && c.userName.trim().toLowerCase() === user.username.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    setOrders(userOrders);
+    setComments(userComments);
   };
 
   useEffect(() => {
     loadData();
     return subscribeDb(loadData);
-  }, []);
+  }, [user]);
 
   if (!user) {
     return (
@@ -81,38 +108,96 @@ export default function Profile({ go, user }) {
           </p>
           <span
             className="badge badge-purple"
-            style={{ marginBottom: 18 }}
+            style={{
+              marginBottom: 18,
+              background: user.role === "admin" ? "var(--brand-700)" : "var(--brand-50)",
+              color: user.role === "admin" ? "#fff" : "var(--brand-700)",
+              fontWeight: 700,
+            }}
           >
-            {user.role === "admin" ? "Quản trị viên (Admin)" : "Thành viên Standard"}
+            {user.role === "admin" ? "🛡️ Quản trị viên (Admin)" : "👤 Thành viên Movix"}
           </span>
 
           <div className="side-menu">
             <button className={tab === "history" ? "active" : ""} onClick={() => setTab("history")}>
-              🎟️ Lịch sử vé đã đặt ({orders.length})
+              🎟️ Vé cá nhân của tôi ({orders.length})
             </button>
             <button className={tab === "info" ? "active" : ""} onClick={() => setTab("info")}>
               👤 Thông tin cá nhân
             </button>
             <button className={tab === "reviews" ? "active" : ""} onClick={() => setTab("reviews")}>
-              ⭐ Đánh giá phim ({comments.length})
+              ⭐ Đánh giá của tôi ({comments.length})
             </button>
           </div>
+
+          {user.role === "admin" && (
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--ink-100)" }}>
+              <button
+                className="btn btn-primary btn-sm btn-block"
+                style={{ fontWeight: 700 }}
+                onClick={() => go("admin")}
+              >
+                ⚡ Đến Bảng Quản trị Admin
+              </button>
+            </div>
+          )}
         </div>
 
         <div>
           {/* Lịch sử đặt vé (UC10, Hình 16) */}
           {tab === "history" && (
             <div className="card">
+              {user.role === "admin" && (
+                <div
+                  style={{
+                    background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
+                    border: "1px solid #93c5fd",
+                    borderRadius: 8,
+                    padding: "12px 16px",
+                    marginBottom: 18,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <strong style={{ fontSize: 13.5, color: "#1e3a8a", display: "block" }}>
+                      🛡️ Chế độ Quản trị viên
+                    </strong>
+                    <span style={{ fontSize: 12.5, color: "#2563eb" }}>
+                      Trang này chỉ hiển thị vé cá nhân của bạn ({orders.length} vé). Để xem và quản lý toàn bộ {allOrdersCount} đơn đặt vé của tất cả khách hàng trên toàn quốc, hãy vào Quản lý đặt vé.
+                    </span>
+                  </div>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    style={{ whiteSpace: "nowrap" }}
+                    onClick={() => go("admin")}
+                  >
+                    Quản lý toàn bộ đơn →
+                  </button>
+                </div>
+              )}
+
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-                <h3 style={{ fontSize: 16 }}>Vé xem phim đã đặt ({orders.length})</h3>
+                <h3 style={{ fontSize: 16 }}>Vé xem phim cá nhân ({orders.length})</h3>
                 <button className="btn btn-secondary btn-sm" onClick={() => go("showtimes")}>
                   + Đặt vé mới
                 </button>
               </div>
 
               {orders.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 30, color: "var(--ink-500)" }}>
-                  Bạn chưa có đơn đặt vé nào.
+                <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--ink-500)" }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>🎟️</div>
+                  <div style={{ fontWeight: 600, color: "var(--ink-800)", marginBottom: 4 }}>
+                    Chưa có vé nào thuộc tài khoản này
+                  </div>
+                  <p style={{ fontSize: 13.5 }}>
+                    Mỗi vé được đặt sẽ gắn liền với tài khoản của bạn và được bảo mật tuyệt đối, các tài khoản khác không thể xem được.
+                  </p>
+                  <button className="btn btn-primary btn-sm" style={{ marginTop: 12 }} onClick={() => go("movies")}>
+                    Khám phá phim đang chiếu
+                  </button>
                 </div>
               ) : (
                 orders.map((b) => {
@@ -223,16 +308,31 @@ export default function Profile({ go, user }) {
           {/* Đánh giá của tôi */}
           {tab === "reviews" && (
             <div className="card">
-              <h3 style={{ fontSize: 16, marginBottom: 18 }}>Đánh giá phim bạn đã đóng góp</h3>
-              {comments.map((c) => (
-                <div className="review-row" key={c.id}>
-                  <div className="review-head">
-                    <span style={{ fontWeight: 700, color: "var(--brand-700)" }}>{c.filmTitle}</span>
-                    <span className="review-stars">{"★".repeat(c.rate)}</span>
+              <h3 style={{ fontSize: 16, marginBottom: 18 }}>Đánh giá phim bạn đã đóng góp ({comments.length})</h3>
+              {comments.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "32px 20px", color: "var(--ink-500)" }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>⭐</div>
+                  <div style={{ fontWeight: 600, color: "var(--ink-800)", marginBottom: 4 }}>
+                    Chưa có đánh giá nào từ bạn
                   </div>
-                  <p className="review-text">{c.content}</p>
+                  <p style={{ fontSize: 13.5 }}>
+                    Hãy xem phim và để lại bình luận tại trang chi tiết phim để tích luỹ thêm điểm thưởng thành viên.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                comments.map((c) => (
+                  <div className="review-row" key={c.id}>
+                    <div className="review-head">
+                      <span style={{ fontWeight: 700, color: "var(--brand-700)" }}>{c.filmTitle}</span>
+                      <span className="review-stars">{"★".repeat(c.rate)}</span>
+                    </div>
+                    <p className="review-text">{c.content}</p>
+                    <div style={{ fontSize: 11.5, color: "var(--ink-400)", marginTop: 4 }}>
+                      Đăng ngày: {new Date(c.createdAt || Date.now()).toLocaleDateString("vi-VN")}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>

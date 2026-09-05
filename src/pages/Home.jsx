@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { dbService, subscribeDb } from "../lib/supabaseClient.js";
 import MovieCard from "../components/MovieCard.jsx";
-import { FALLBACK_POSTER, FALLBACK_CINEMA, handleImageError } from "../utils/imageFallback";
+import PromoBannerCarousel from "../components/PromoBannerCarousel.jsx";
+import { FALLBACK_POSTER, FALLBACK_CINEMA, FALLBACK_BANNER, handleImageError } from "../utils/imageFallback";
 
 export default function Home({ go }) {
   const [films, setFilms] = useState([]);
   const [cinemas, setCinemas] = useState([]);
   const [showtimes, setShowtimes] = useState([]);
   const [cities, setCities] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [promotions, setPromotions] = useState([]);
+  const [copiedCode, setCopiedCode] = useState("");
 
   const [selectedFilm, setSelectedFilm] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
@@ -26,6 +30,19 @@ export default function Home({ go }) {
     setCinemas(dbService.getCinemas());
     setShowtimes(dbService.getShowtimes());
     setCities(dbService.getCities());
+    setBanners(dbService.getBanners());
+    setPromotions(dbService.getPromotions());
+  };
+
+  const handleCopyCode = (e, code) => {
+    e.stopPropagation();
+    try {
+      navigator.clipboard.writeText(code);
+    } catch {
+      // fallback
+    }
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(""), 2000);
   };
 
   useEffect(() => {
@@ -100,6 +117,11 @@ export default function Home({ go }) {
         </div>
       </section>
 
+      {/* Banner Quảng Cáo & Khuyến Mãi Nổi Bật */}
+      <section className="container" style={{ marginTop: 10 }}>
+        <PromoBannerCarousel banners={banners} go={go} />
+      </section>
+
       {/* Phim đang chiếu (UC01, UC03) */}
       <section className="section container">
         <div className="section-head">
@@ -120,6 +142,142 @@ export default function Home({ go }) {
           ))}
         </div>
       </section>
+
+      {/* Section Ưu Đãi & Khuyến Mãi Nổi Bật (Mới) */}
+      {promotions.length > 0 && (
+        <section className="section container">
+          <div className="section-head" style={{ flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h2>Ưu Đãi & Khuyến Mãi Hot</h2>
+                <span className="badge badge-green" style={{ fontSize: 12, padding: "2px 8px" }}>
+                  Mới nhất
+                </span>
+              </div>
+              <p style={{ fontSize: 13.5, color: "var(--ink-500)", marginTop: 2 }}>
+                Lấy ngay mã giảm giá vé phim, combo bắp nước và quà tặng độc quyền
+              </p>
+            </div>
+            <button className="link-more" onClick={() => go("promotions")}>
+              Xem tất cả ({promotions.length}) ưu đãi →
+            </button>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+              gap: 20,
+            }}
+          >
+            {promotions.slice(0, 4).map((p) => {
+              const isCopied = copiedCode === p.code;
+              const banner = p.bannerUrl || FALLBACK_BANNER;
+
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    background: "var(--ink-0)",
+                    border: "1px solid var(--ink-200)",
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
+                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-3px)";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.08)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.04)";
+                  }}
+                >
+                  <div style={{ height: 130, position: "relative", overflow: "hidden" }}>
+                    <img
+                      src={banner}
+                      alt={p.title || p.description}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageError(e, FALLBACK_BANNER)}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        background: "var(--red-500)",
+                        color: "#fff",
+                        padding: "3px 8px",
+                        borderRadius: 14,
+                        fontWeight: 800,
+                        fontSize: 11.5,
+                      }}
+                    >
+                      -{p.discountPercent}%
+                    </div>
+                  </div>
+
+                  <div style={{ padding: 14, flex: 1, display: "flex", flexDirection: "column" }}>
+                    <h4 style={{ margin: "0 0 6px", fontSize: 14.5, fontWeight: 700, color: "var(--ink-900)" }}>
+                      {p.title || p.code}
+                    </h4>
+                    <p style={{ margin: "0 0 12px", fontSize: 12.5, color: "var(--ink-600)", lineHeight: 1.4, flex: 1 }}>
+                      {p.description}
+                    </p>
+
+                    {/* Promo Code Strip */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "4px 8px",
+                        background: "var(--brand-50)",
+                        border: "1px dashed var(--brand-300)",
+                        borderRadius: 6,
+                        marginBottom: 10,
+                      }}
+                    >
+                      <span style={{ fontWeight: 800, fontSize: 13, color: "var(--brand-700)" }}>
+                        {p.code}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyCode(e, p.code)}
+                        style={{
+                          background: isCopied ? "var(--green-600)" : "none",
+                          color: isCopied ? "#fff" : "var(--brand-600)",
+                          border: isCopied ? "none" : "1px solid var(--brand-300)",
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {isCopied ? "✓ Đã chép" : "Sao chép"}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => go("movies", { promoCode: p.code })}
+                      className="btn btn-primary btn-sm"
+                      style={{ width: "100%", fontSize: 12, fontWeight: 700 }}
+                    >
+                      Đặt vé dùng mã này →
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Lịch chiếu theo cụm rạp (UC05) */}
       <section className="section container">
