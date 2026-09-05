@@ -45,10 +45,25 @@ export default function Navbar({ route, go, user, onLogout }) {
         </form>
 
         <div className="nav-right">
+          {/* Quick Admin Access Button */}
+          <button
+            className="btn btn-sm"
+            style={{
+              background: "var(--brand-50)",
+              color: "var(--brand-700)",
+              border: "1px solid var(--brand-200)",
+              fontWeight: 700,
+            }}
+            onClick={() => go("admin")}
+            title="Mở Bảng điều khiển Quản trị hệ thống (UC12 - UC20)"
+          >
+            ⚡ Quản trị Admin
+          </button>
+
           {user ? (
             <>
               <button className="btn btn-ghost" onClick={() => go("profile")}>
-                Xin chào, {user.name.split(" ").slice(-1)[0]}
+                👤 {user.name || user.fullName}
               </button>
               <button className="btn btn-secondary btn-sm" onClick={onLogout}>
                 Đăng xuất

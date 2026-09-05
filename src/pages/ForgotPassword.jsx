@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 const STEPS = ["Xác thực", "Mã OTP", "Mật khẩu mới"];
 
-export default function ForgotPassword({ go }) {
+export default function ForgotPassword({ go, goBack }) {
   const [stage, setStage] = useState(1);
   const [identity, setIdentity] = useState("");
   const [otp, setOtp] = useState("");
@@ -31,6 +31,17 @@ export default function ForgotPassword({ go }) {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
+        <div style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => go("login")}
+            style={{ padding: "4px 8px", fontSize: 13, color: "var(--ink-600)", display: "inline-flex", alignItems: "center", gap: 5 }}
+          >
+            ← Quay lại đăng nhập
+          </button>
+        </div>
+
         <div className="auth-logo">
           <div className="brand-mark">🎬</div>
           <h2>Movix</h2>
@@ -77,6 +88,16 @@ export default function ForgotPassword({ go }) {
             </div>
             {error && <div className="form-error">{error}</div>}
             <button className="btn btn-primary btn-block" type="submit">Xác nhận</button>
+            <div style={{ marginTop: 10, textAlign: "center" }}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setStage(1)}
+                style={{ color: "var(--ink-600)", fontSize: 13 }}
+              >
+                ← Quay lại bước trước
+              </button>
+            </div>
           </form>
         )}
         {stage === 3 && (
@@ -91,11 +112,23 @@ export default function ForgotPassword({ go }) {
             </div>
             {error && <div className="form-error">{error}</div>}
             <button className="btn btn-primary btn-block" type="submit">Đặt lại mật khẩu</button>
+            <div style={{ marginTop: 10, textAlign: "center" }}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setStage(2)}
+                style={{ color: "var(--ink-600)", fontSize: 13 }}
+              >
+                ← Quay lại bước trước
+              </button>
+            </div>
           </form>
         )}
 
-        <div className="form-foot">
+        <div className="form-foot" style={{ display: "flex", justifyContent: "center", gap: 16 }}>
           <button onClick={() => go("login")}>← Quay lại đăng nhập</button>
+          <span>·</span>
+          <button onClick={() => go("home")}>Về trang chủ</button>
         </div>
       </div>
     </div>
