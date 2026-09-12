@@ -1,7 +1,7 @@
 # Movix - Cinemax — Front-end đặt vé xem phim
 
 Front-end React cho hệ thống đặt vé xem phim Movix, dựng theo đặc tả
-usecase và Figma mockup trong tài liệu "Đồ án 01" (Phần 2 & 3).
+usecase.
 
 ## Cách xem nhanh (không cần cài đặt)
 
