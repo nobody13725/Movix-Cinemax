@@ -48,8 +48,6 @@ esbuild src/main.jsx --bundle --outfile=dist/bundle.js \
 Lệnh trên xuất luôn `dist/bundle.css` (esbuild tự gom CSS import trong
 `main.jsx`) — không cần Tailwind hay bước build riêng cho CSS.
 
-## Kết nối với backend thật
-
 Hiện tại toàn bộ dữ liệu là mock (`src/data/mockData.js`), phù hợp để
 demo giao diện độc lập. Để nối với API thật (ví dụ
 `POST /api/v1/auth/register` như trong `4.2. Source code` của đồ án):

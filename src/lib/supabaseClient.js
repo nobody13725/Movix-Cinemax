@@ -12,9 +12,10 @@ import {
   INITIAL_SHOWTIMES,
   INITIAL_COMMENTS,
   INITIAL_ORDERS,
+  getTodayStr,
 } from "../data/initialDbData.js";
 
-const STORAGE_KEY_DB = "movix_db_v4";
+const STORAGE_KEY_DB = "movix_db_v7";
 const STORAGE_KEY_CONFIG = "movix_supabase_config_v1";
 const STORAGE_KEY_AUTH = "movix_current_user_v2";
 
@@ -156,6 +157,18 @@ function initLocalDb() {
             }
           }
         }
+      }
+
+      // Bảo đảm lịch chiếu luôn khớp với ngày hiện tại và tuần tới
+      const todayStr = getTodayStr(0);
+      const hasTodayShowtimes =
+        db.showtimes &&
+        Array.isArray(db.showtimes) &&
+        db.showtimes.some((st) => st.date === todayStr);
+
+      if (!hasTodayShowtimes || (db.showtimes && db.showtimes.length < INITIAL_SHOWTIMES.length)) {
+        db.showtimes = [...INITIAL_SHOWTIMES];
+        changed = true;
       }
 
       if (changed) {
@@ -722,6 +735,7 @@ export const dbService = {
       users: INITIAL_USERS,
       combofoods: INITIAL_COMBOFOODS,
       promotions: INITIAL_PROMOTIONS,
+      banners: INITIAL_BANNERS,
       showtimes: INITIAL_SHOWTIMES,
       comments: INITIAL_COMMENTS,
       orders: INITIAL_ORDERS,

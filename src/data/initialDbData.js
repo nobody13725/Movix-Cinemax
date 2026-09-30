@@ -721,16 +721,40 @@ export const INITIAL_BANNERS = [
 export function getTodayStr(offsetDays = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function getTodayFormattedVN(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+export function getRecentTimestamp(offsetDays = 0, hour = 12, minute = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
 }
 
 const d0 = getTodayStr(0); // Hôm nay
-const d1 = getTodayStr(1); // Ngày mai
-const d2 = getTodayStr(2); // Ngày kia
-const d3 = getTodayStr(3);
+const d1 = getTodayStr(1); // Ngày mai (+1 ngày)
+const d2 = getTodayStr(2); // Ngày kia (+2 ngày)
+const d3 = getTodayStr(3); // +3 ngày
+const d4 = getTodayStr(4); // +4 ngày
+const d5 = getTodayStr(5); // +5 ngày (Cuối tuần)
+const d6 = getTodayStr(6); // +6 ngày (Cuối tuần)
+const d7 = getTodayStr(7); // +7 ngày (Trọn 1 tuần tới)
 
 export const INITIAL_SHOWTIMES = [
-  // --- CGV Bà Triệu (cin-1, Hà Nội) ---
+  // NGÀY HÔM NAY (d0)
+  // CGV Bà Triệu (cin-1, Hà Nội)
   {
     id: "st-1",
     filmId: "film-1",
@@ -820,7 +844,7 @@ export const INITIAL_SHOWTIMES = [
     status: "Đang hoạt động"
   },
 
-  // --- Lotte Cinema Landmark 72 (cin-2, Hà Nội) ---
+  //Lotte Cinema Landmark 72 (cin-2, Hà Nội)
   {
     id: "st-6",
     filmId: "film-3",
@@ -866,7 +890,7 @@ export const INITIAL_SHOWTIMES = [
     status: "Đang hoạt động"
   },
 
-  // --- Beta Cinema Quang Trung (cin-3, TP.HCM) ---
+  // Beta Cinema Quang Trung (cin-3, TP.HCM)
   {
     id: "st-8",
     filmId: "film-4",
@@ -969,7 +993,7 @@ export const INITIAL_SHOWTIMES = [
     status: "Đang hoạt động"
   },
 
-  // --- BHD Star Vincom Thảo Điền (cin-5, TP.HCM) ---
+  // BHD Star Vincom Thảo Điền (cin-5, TP.HCM)
   {
     id: "st-22",
     filmId: "film-1",
@@ -999,189 +1023,237 @@ export const INITIAL_SHOWTIMES = [
     roomId: "room-5a",
     startTime: "19:00",
     date: d0,
-    basePrice: 130000,
-    seatsBooked: ["D3", "D4"],
-    status: "Đang hoạt động"
-  },
-  {
-    id: "st-25",
-    filmId: "film-7",
-    cinemaId: "cin-5",
-    roomId: "room-5a",
-    startTime: "21:45",
-    date: d0,
     basePrice: 120000,
-    seatsBooked: ["A2", "A3"],
+    seatsBooked: ["D4", "D5"],
     status: "Đang hoạt động"
   },
 
-  // --- CGV Vincom Đà Nẵng (cin-6, Đà Nẵng) ---
+  // CGV Vincom Đà Nẵng (cin-6, Đà Nẵng)
   {
-    id: "st-26",
-    filmId: "film-2",
+    id: "st-25",
+    filmId: "film-1",
     cinemaId: "cin-6",
     roomId: "room-6",
     startTime: "10:30",
     date: d0,
     basePrice: 95000,
-    seatsBooked: ["C5", "C6"],
+    seatsBooked: ["B1", "B2"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-26",
+    filmId: "film-2",
+    cinemaId: "cin-6",
+    roomId: "room-6",
+    startTime: "15:45",
+    date: d0,
+    basePrice: 100000,
+    seatsBooked: ["C6", "C7"],
     status: "Đang hoạt động"
   },
   {
     id: "st-27",
-    filmId: "film-4",
+    filmId: "film-6",
     cinemaId: "cin-6",
     roomId: "room-6",
-    startTime: "14:00",
-    date: d0,
-    basePrice: 95000,
-    seatsBooked: ["D4", "D5"],
-    status: "Đang hoạt động"
-  },
-  {
-    id: "st-28",
-    filmId: "film-5",
-    cinemaId: "cin-6",
-    roomId: "room-6",
-    startTime: "17:15",
+    startTime: "19:15",
     date: d0,
     basePrice: 100000,
     seatsBooked: ["E5", "E6"],
     status: "Đang hoạt động"
   },
-  {
-    id: "st-29",
-    filmId: "film-8",
-    cinemaId: "cin-6",
-    roomId: "room-6",
-    startTime: "20:00",
-    date: d0,
-    basePrice: 95000,
-    seatsBooked: ["F5", "F6"],
-    status: "Đang hoạt động"
-  },
 
-  // --- Lotte Cinema Ninh Kiều Cần Thơ (cin-7, Cần Thơ) ---
+  // Lotte Cinema Cần Thơ (cin-7, Cần Thơ)
   {
-    id: "st-30",
-    filmId: "film-3",
-    cinemaId: "cin-7",
-    roomId: "room-7",
-    startTime: "10:00",
-    date: d0,
-    basePrice: 80000,
-    seatsBooked: ["B4", "B5"],
-    status: "Đang hoạt động"
-  },
-  {
-    id: "st-31",
+    id: "st-28",
     filmId: "film-5",
     cinemaId: "cin-7",
     roomId: "room-7",
-    startTime: "13:45",
+    startTime: "11:00",
     date: d0,
-    basePrice: 85000,
+    basePrice: 75000,
+    seatsBooked: ["D2", "D3"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-29",
+    filmId: "film-4",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "16:30",
+    date: d0,
+    basePrice: 80000,
+    seatsBooked: ["F4", "F5"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-30",
+    filmId: "film-8",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "20:00",
+    date: d0,
+    basePrice: 80000,
     seatsBooked: ["C4", "C5"],
+    status: "Đang hoạt động"
+  },
+
+  // NGÀY MAI (d1)
+  {
+    id: "st-31",
+    filmId: "film-1",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "10:15",
+    date: d1,
+    basePrice: 135000,
+    seatsBooked: ["D3", "D4"],
     status: "Đang hoạt động"
   },
   {
     id: "st-32",
-    filmId: "film-7",
-    cinemaId: "cin-7",
-    roomId: "room-7",
-    startTime: "17:00",
-    date: d0,
-    basePrice: 85000,
-    seatsBooked: ["D5", "D6"],
-    status: "Đang hoạt động"
-  },
-  {
-    id: "st-33",
-    filmId: "film-11",
-    cinemaId: "cin-7",
-    roomId: "room-7",
-    startTime: "19:30",
-    date: d0,
-    basePrice: 80000,
-    seatsBooked: ["E5", "E6"],
-    status: "Đang hoạt động"
-  },
-
-  // --- Suất chiếu các ngày tiếp theo (d1, d2, d3) ---
-  {
-    id: "st-34",
-    filmId: "film-1",
+    filmId: "film-2",
     cinemaId: "cin-1",
     roomId: "room-2",
     startTime: "14:30",
     date: d1,
-    basePrice: 125000,
-    seatsBooked: ["C4", "C5"],
+    basePrice: 135000,
+    seatsBooked: ["E5", "E6"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-33",
+    filmId: "film-4",
+    cinemaId: "cin-3",
+    roomId: "room-4",
+    startTime: "11:00",
+    date: d1,
+    basePrice: 75000,
+    seatsBooked: ["C1", "C2"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-34",
+    filmId: "film-5",
+    cinemaId: "cin-4",
+    roomId: "room-5",
+    startTime: "19:00",
+    date: d1,
+    basePrice: 90000,
+    seatsBooked: ["B4", "B5"],
     status: "Đang hoạt động"
   },
   {
     id: "st-35",
-    filmId: "film-2",
-    cinemaId: "cin-1",
-    roomId: "room-2",
-    startTime: "18:45",
+    filmId: "film-11",
+    cinemaId: "cin-3",
+    roomId: "room-4",
+    startTime: "15:30",
     date: d1,
-    basePrice: 130000,
-    seatsBooked: ["D6", "D7"],
+    basePrice: 80000,
+    seatsBooked: [],
     status: "Đang hoạt động"
   },
   {
     id: "st-36",
-    filmId: "film-3",
-    cinemaId: "cin-2",
-    roomId: "room-3",
-    startTime: "15:00",
+    filmId: "film-12",
+    cinemaId: "cin-5",
+    roomId: "room-5a",
+    startTime: "18:00",
     date: d1,
     basePrice: 110000,
-    seatsBooked: ["A3"],
+    seatsBooked: [],
     status: "Đang hoạt động"
   },
   {
-    id: "st-37",
-    filmId: "film-4",
-    cinemaId: "cin-3",
-    roomId: "room-4",
+    id: "st-44",
+    filmId: "film-3",
+    cinemaId: "cin-2",
+    roomId: "room-3",
     startTime: "16:30",
     date: d1,
+    basePrice: 120000,
+    seatsBooked: ["A3", "A4"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-45",
+    filmId: "film-6",
+    cinemaId: "cin-6",
+    roomId: "room-6",
+    startTime: "19:30",
+    date: d1,
+    basePrice: 100000,
+    seatsBooked: ["D5", "D6"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-46",
+    filmId: "film-8",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "14:00",
+    date: d1,
     basePrice: 80000,
-    seatsBooked: ["C4"],
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-47",
+    filmId: "film-9",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "21:00",
+    date: d1,
+    basePrice: 140000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+
+  // =========================================================================
+  // NGÀY KIA (d2)
+  // =========================================================================
+  {
+    id: "st-37",
+    filmId: "film-3",
+    cinemaId: "cin-2",
+    roomId: "room-3",
+    startTime: "13:30",
+    date: d2,
+    basePrice: 115000,
+    seatsBooked: [],
     status: "Đang hoạt động"
   },
   {
     id: "st-38",
-    filmId: "film-6",
-    cinemaId: "cin-4",
-    roomId: "room-5",
-    startTime: "19:15",
-    date: d1,
-    basePrice: 90000,
-    seatsBooked: ["B5"],
+    filmId: "film-7",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "20:15",
+    date: d2,
+    basePrice: 135000,
+    seatsBooked: [],
     status: "Đang hoạt động"
   },
   {
     id: "st-39",
     filmId: "film-8",
-    cinemaId: "cin-6",
-    roomId: "room-6",
-    startTime: "14:45",
-    date: d1,
-    basePrice: 95000,
-    seatsBooked: ["E4"],
+    cinemaId: "cin-3",
+    roomId: "room-4",
+    startTime: "10:00",
+    date: d2,
+    basePrice: 75000,
+    seatsBooked: [],
     status: "Đang hoạt động"
   },
   {
     id: "st-40",
-    filmId: "film-1",
-    cinemaId: "cin-1",
-    roomId: "room-2",
-    startTime: "19:30",
+    filmId: "film-10",
+    cinemaId: "cin-2",
+    roomId: "room-3",
+    startTime: "16:00",
     date: d2,
-    basePrice: 135000,
+    basePrice: 120000,
     seatsBooked: [],
     status: "Đang hoạt động"
   },
@@ -1196,6 +1268,54 @@ export const INITIAL_SHOWTIMES = [
     seatsBooked: [],
     status: "Đang hoạt động"
   },
+  {
+    id: "st-48",
+    filmId: "film-1",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "15:00",
+    date: d2,
+    basePrice: 135000,
+    seatsBooked: ["C3", "C4"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-49",
+    filmId: "film-2",
+    cinemaId: "cin-5",
+    roomId: "room-5a",
+    startTime: "19:15",
+    date: d2,
+    basePrice: 120000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-50",
+    filmId: "film-6",
+    cinemaId: "cin-6",
+    roomId: "room-6",
+    startTime: "18:00",
+    date: d2,
+    basePrice: 100000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-51",
+    filmId: "film-4",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "16:45",
+    date: d2,
+    basePrice: 80000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+
+  // =========================================================================
+  // NGÀY 3 KẾ TIẾP (d3)
+  // =========================================================================
   {
     id: "st-42",
     filmId: "film-2",
@@ -1215,6 +1335,440 @@ export const INITIAL_SHOWTIMES = [
     startTime: "20:00",
     date: d3,
     basePrice: 140000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-52",
+    filmId: "film-1",
+    cinemaId: "cin-1",
+    roomId: "room-1",
+    startTime: "11:15",
+    date: d3,
+    basePrice: 90000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-53",
+    filmId: "film-3",
+    cinemaId: "cin-2",
+    roomId: "room-3",
+    startTime: "15:00",
+    date: d3,
+    basePrice: 110000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-54",
+    filmId: "film-5",
+    cinemaId: "cin-4",
+    roomId: "room-5",
+    startTime: "17:45",
+    date: d3,
+    basePrice: 90000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-55",
+    filmId: "film-12",
+    cinemaId: "cin-3",
+    roomId: "room-4",
+    startTime: "14:15",
+    date: d3,
+    basePrice: 75000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-56",
+    filmId: "film-11",
+    cinemaId: "cin-5",
+    roomId: "room-5a",
+    startTime: "19:30",
+    date: d3,
+    basePrice: 115000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-57",
+    filmId: "film-8",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "18:00",
+    date: d3,
+    basePrice: 80000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+
+  // =========================================================================
+  // NGÀY 4 KẾ TIẾP (d4)
+  // =========================================================================
+  {
+    id: "st-58",
+    filmId: "film-1",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "14:00",
+    date: d4,
+    basePrice: 135000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-59",
+    filmId: "film-2",
+    cinemaId: "cin-1",
+    roomId: "room-1",
+    startTime: "17:30",
+    date: d4,
+    basePrice: 95000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-60",
+    filmId: "film-3",
+    cinemaId: "cin-5",
+    roomId: "room-5a",
+    startTime: "19:00",
+    date: d4,
+    basePrice: 120000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-61",
+    filmId: "film-4",
+    cinemaId: "cin-3",
+    roomId: "room-4",
+    startTime: "13:30",
+    date: d4,
+    basePrice: 75000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-62",
+    filmId: "film-5",
+    cinemaId: "cin-4",
+    roomId: "room-5",
+    startTime: "20:15",
+    date: d4,
+    basePrice: 95000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-63",
+    filmId: "film-6",
+    cinemaId: "cin-6",
+    roomId: "room-6",
+    startTime: "16:00",
+    date: d4,
+    basePrice: 100000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-64",
+    filmId: "film-7",
+    cinemaId: "cin-2",
+    roomId: "room-3",
+    startTime: "19:45",
+    date: d4,
+    basePrice: 125000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-65",
+    filmId: "film-10",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "15:30",
+    date: d4,
+    basePrice: 80000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+
+  // =========================================================================
+  // NGÀY 5 KẾ TIẾP (d5 - CUỐI TUẦN SÔI ĐỘNG)
+  // =========================================================================
+  {
+    id: "st-66",
+    filmId: "film-1",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "09:30",
+    date: d5,
+    basePrice: 135000,
+    seatsBooked: ["A1", "A2"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-67",
+    filmId: "film-1",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "19:15",
+    date: d5,
+    basePrice: 145000,
+    seatsBooked: ["G5", "G6", "H6"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-68",
+    filmId: "film-2",
+    cinemaId: "cin-2",
+    roomId: "room-3",
+    startTime: "14:30",
+    date: d5,
+    basePrice: 125000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-69",
+    filmId: "film-3",
+    cinemaId: "cin-4",
+    roomId: "room-5",
+    startTime: "16:45",
+    date: d5,
+    basePrice: 100000,
+    seatsBooked: ["E4", "E5"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-70",
+    filmId: "film-5",
+    cinemaId: "cin-3",
+    roomId: "room-4",
+    startTime: "18:00",
+    date: d5,
+    basePrice: 85000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-71",
+    filmId: "film-8",
+    cinemaId: "cin-5",
+    roomId: "room-5a",
+    startTime: "10:30",
+    date: d5,
+    basePrice: 110000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-72",
+    filmId: "film-9",
+    cinemaId: "cin-6",
+    roomId: "room-6",
+    startTime: "20:00",
+    date: d5,
+    basePrice: 110000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-73",
+    filmId: "film-12",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "13:30",
+    date: d5,
+    basePrice: 80000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+
+  // =========================================================================
+  // NGÀY 6 KẾ TIẾP (d6 - CUỐI TUẦN BLOCKBUSTER)
+  // =========================================================================
+  {
+    id: "st-74",
+    filmId: "film-2",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "10:00",
+    date: d6,
+    basePrice: 135000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-75",
+    filmId: "film-2",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "20:30",
+    date: d6,
+    basePrice: 145000,
+    seatsBooked: ["F5", "F6"],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-76",
+    filmId: "film-1",
+    cinemaId: "cin-4",
+    roomId: "room-5",
+    startTime: "15:15",
+    date: d6,
+    basePrice: 95000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-77",
+    filmId: "film-4",
+    cinemaId: "cin-5",
+    roomId: "room-5a",
+    startTime: "14:00",
+    date: d6,
+    basePrice: 115000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-78",
+    filmId: "film-6",
+    cinemaId: "cin-3",
+    roomId: "room-4",
+    startTime: "19:00",
+    date: d6,
+    basePrice: 85000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-79",
+    filmId: "film-7",
+    cinemaId: "cin-2",
+    roomId: "room-3",
+    startTime: "18:30",
+    date: d6,
+    basePrice: 125000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-80",
+    filmId: "film-10",
+    cinemaId: "cin-6",
+    roomId: "room-6",
+    startTime: "11:00",
+    date: d6,
+    basePrice: 100000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-81",
+    filmId: "film-11",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "17:15",
+    date: d6,
+    basePrice: 80000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+
+  // =========================================================================
+  // NGÀY 7 KẾ TIẾP (d7 - TRỌN VẸN 1 TUẦN TỚI)
+  // =========================================================================
+  {
+    id: "st-82",
+    filmId: "film-1",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "14:15",
+    date: d7,
+    basePrice: 135000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-83",
+    filmId: "film-2",
+    cinemaId: "cin-1",
+    roomId: "room-2",
+    startTime: "19:45",
+    date: d7,
+    basePrice: 135000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-84",
+    filmId: "film-3",
+    cinemaId: "cin-2",
+    roomId: "room-3",
+    startTime: "16:00",
+    date: d7,
+    basePrice: 115000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-85",
+    filmId: "film-5",
+    cinemaId: "cin-4",
+    roomId: "room-5",
+    startTime: "18:30",
+    date: d7,
+    basePrice: 90000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-86",
+    filmId: "film-6",
+    cinemaId: "cin-5",
+    roomId: "room-5a",
+    startTime: "15:00",
+    date: d7,
+    basePrice: 110000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-87",
+    filmId: "film-8",
+    cinemaId: "cin-3",
+    roomId: "room-4",
+    startTime: "10:30",
+    date: d7,
+    basePrice: 75000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-88",
+    filmId: "film-9",
+    cinemaId: "cin-6",
+    roomId: "room-6",
+    startTime: "20:15",
+    date: d7,
+    basePrice: 100000,
+    seatsBooked: [],
+    status: "Đang hoạt động"
+  },
+  {
+    id: "st-89",
+    filmId: "film-12",
+    cinemaId: "cin-7",
+    roomId: "room-7",
+    startTime: "16:15",
+    date: d7,
+    basePrice: 80000,
     seatsBooked: [],
     status: "Đang hoạt động"
   }

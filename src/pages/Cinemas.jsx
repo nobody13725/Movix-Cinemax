@@ -68,31 +68,31 @@ export default function Cinemas({ go }) {
           const isRealImg = c.avatar && (c.avatar.startsWith("http") || c.avatar.startsWith("data:image"));
           const bannerImg = c.banner || (isRealImg ? c.avatar : null);
 
-          return (
-            <div className="card" key={c.id} style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              {bannerImg ? (
-                <div style={{ height: 140, position: "relative", overflow: "hidden", background: "var(--ink-100)" }}>
-                  <img
-                    src={bannerImg}
-                    alt={c.name}
-                    referrerPolicy="no-referrer"
-                    onError={(e) => handleImageError(e, FALLBACK_CINEMA)}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "linear-gradient(to top, rgba(20,21,43,0.7) 0%, transparent 60%)",
-                    }}
-                  />
-                  <span
-                    className="badge badge-purple"
-                    style={{
-                      position: "absolute",
-                      bottom: 12,
-                      left: 16,
-                      background: "rgba(255,255,255,0.95)",
+            return (
+              <div className="card" key={c.id} style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                {bannerImg ? (
+                  <div style={{ height: 140, position: "relative", overflow: "hidden", background: "var(--ink-100)" }}>
+                    <img
+                      src={bannerImg}
+                      alt={c.name}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageError(e, FALLBACK_CINEMA)}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "linear-gradient(to top, rgba(20,21,43,0.7) 0%, transparent 60%)",
+                      }}
+                    />
+                    <span
+                      className="badge badge-purple"
+                      style={{
+                        position: "absolute",
+                        bottom: 12,
+                        left: 16,
+                        background: "rgba(255,255,255,0.95)",
                       color: "var(--brand-700)",
                       fontWeight: 700,
                     }}

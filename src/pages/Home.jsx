@@ -70,7 +70,7 @@ export default function Home({ go }) {
           <p className="hero-eyebrow">Hệ thống đặt vé xem phim Movix</p>
           <h1>Chọn phim, chọn ghế, giữ chỗ chỉ trong 2 phút</h1>
           <p className="sub">
-            Cập nhật lịch chiếu mới nhất từ các rạp trên toàn quốc với kết nối Supabase CSDL thời gian thực.
+            Cập nhật lịch chiếu mới nhất từ các rạp trên toàn quốc với kết nối CSDL thời gian thực.
           </p>
 
           <form className="search-card" onSubmit={findShowtimes}>

@@ -38,7 +38,9 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
   const room = rooms.find((r) => r.id === showtime?.roomId) || rooms[0] || {};
 
   const time = params?.time || showtime?.startTime || "19:30";
-  const date = params?.date || showtime?.date || new Date().toISOString().slice(0, 10);
+  const _today = new Date();
+  const defaultLocalDate = `${_today.getFullYear()}-${String(_today.getMonth() + 1).padStart(2, "0")}-${String(_today.getDate()).padStart(2, "0")}`;
+  const date = params?.date || showtime?.date || defaultLocalDate;
   const basePrice = showtime?.basePrice || 80000;
   const vipPrice = basePrice + 15000;
 
@@ -306,14 +308,27 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
               width: 56,
               height: 78,
               background: "var(--brand-50)",
-              fontSize: 28,
               borderRadius: 8,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              overflow: "hidden",
+              flexShrink: 0,
             }}
           >
-            {movie.thumbnail || "🎬"}
+            {(movie.posterUrl || movie.thumbnail) &&
+            ((movie.posterUrl || movie.thumbnail).startsWith("http") ||
+              (movie.posterUrl || movie.thumbnail).startsWith("data:image")) ? (
+              <img
+                src={movie.posterUrl || movie.thumbnail}
+                alt={movie.title || "Poster"}
+                referrerPolicy="no-referrer"
+                onError={(e) => handleImageError(e, FALLBACK_POSTER)}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <span style={{ fontSize: 28 }}>{movie.thumbnail || "🎬"}</span>
+            )}
           </div>
           <div>
             <h3 style={{ fontSize: 16 }}>{movie.title}</h3>

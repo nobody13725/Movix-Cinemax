@@ -95,7 +95,7 @@ export default function MovieDetail({ go, goBack, params, user }) {
             position: "relative",
             overflow: "hidden",
             background: "linear-gradient(135deg, var(--brand-700), var(--purple-600))",
-            boxShadow: "0 16px 36px rgba(0,0,0,0.5)",
+            boxShadow: "0 16px 36px rgb(0, 0, 0)",
           }}
         >
           <img
@@ -114,7 +114,14 @@ export default function MovieDetail({ go, goBack, params, user }) {
         </div>
         <div>
           <div className="rating-badge">⭐ {film.rating || 8.5} / 10</div>
-          <h1>{film.title}</h1>
+          <h1
+            style={{
+              color: "white",
+              fontSize: "40px",
+            }}
+          >
+            {film.title}
+          </h1>
           <div className="detail-tags">
             <span className="tag">{film.ageRating || "T13"}</span>
             <span className="tag">{film.format || "2D, 3D"}</span>

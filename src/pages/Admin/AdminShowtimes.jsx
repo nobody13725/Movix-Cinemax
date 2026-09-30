@@ -216,7 +216,16 @@ export default function AdminShowtimes() {
               return (
                 <tr key={st.id}>
                   <td>
-                    <div style={{ fontSize: 24 }}>{f?.thumbnail || "🎬"}</div>
+                    {(f?.posterUrl || f?.thumbnail) &&
+                    ((f?.posterUrl || f?.thumbnail).startsWith("http") || (f?.posterUrl || f?.thumbnail).startsWith("data:image")) ? (
+                      <img
+                        src={f.posterUrl || f.thumbnail}
+                        alt=""
+                        style={{ width: 36, height: 48, objectFit: "cover", borderRadius: 4 }}
+                      />
+                    ) : (
+                      <div style={{ fontSize: 24 }}>{f?.thumbnail || "🎬"}</div>
+                    )}
                   </td>
                   <td>
                     <div style={{ fontWeight: 700, color: "var(--ink-900)" }}>{f?.title || "Phim Movix"}</div>
