@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { dbService } from "../lib/supabaseClient.js";
 
 export default function Register({ go, goBack, onLogin }) {
@@ -6,19 +6,63 @@ export default function Register({ go, goBack, onLogin }) {
   const [form, setForm] = useState({ fullName: "", username: "", email: "", phone: "", password: "", confirm: "" });
   const [otp, setOtp] = useState(["1", "2", "3", "4", "5", "6"]);
   const [error, setError] = useState("");
+  const submittingRef = useRef(false);
+
+  function findDuplicate(email, phone) {
+    const users = dbService.getUsers() || [];
+    if (users.some((u) => u.email?.trim().toLowerCase() === email.toLowerCase())) return "email";
+    if (phone && users.some((u) => u.phone === phone)) return "phone";
+    return null;
+  }
 
   function submitForm(e) {
     e.preventDefault();
-    if (!form.fullName.trim()) return setError("Vui lòng nhập họ và tên");
-    if (!form.email.trim() || !form.email.includes("@")) return setError("Email không hợp lệ");
-    if (form.password.length < 6) return setError("Mật khẩu cần tối thiểu 6 ký tự");
+    const fullName = form.fullName.trim();
+    const email = form.email.trim();
+    const phone = form.phone.trim();
+
+    // TC_REG_01: bỏ trống toàn bộ
+    if (!fullName && !email && !form.password && !form.confirm) {
+      return setError("Vui lòng nhập đầy đủ các trường bắt buộc");
+    }
+
+    // Họ tên (TC_REG_08, 16, 17, 18, 20)
+    if (!fullName) return setError("Vui lòng nhập họ và tên");
+    if (fullName.length > 100) return setError("Họ tên vượt quá độ dài cho phép (tối đa 100 ký tự)");
+    if (!/^[\p{L}]+(?:[\s'.-][\p{L}]+)*$/u.test(fullName)) {
+      return setError("Họ tên không hợp lệ (chỉ gồm chữ cái và khoảng trắng)");
+    }
+
+    // Email (TC_REG_05, 06, 07, 09)
+    if (!email) return setError("Vui lòng nhập email");
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return setError("Email không hợp lệ");
+    }
+
+    // Số điện thoại (TC_REG_21, 22, 23)
+    if (phone && !/^0\d{9}$/.test(phone)) return setError("Số điện thoại không hợp lệ");
+
+    // Mật khẩu (TC_REG_10, 11, 12, 13, 14, 15)
+    if (!form.password) return setError("Vui lòng nhập mật khẩu");
+    if (form.password.length < 8) return setError("Mật khẩu cần tối thiểu 8 ký tự");
+    if (form.password.length > 128) return setError("Mật khẩu vượt quá độ dài cho phép (tối đa 128 ký tự)");
+    if (
+      !/[a-z]/.test(form.password) ||
+      !/[A-Z]/.test(form.password) ||
+      !/\d/.test(form.password) ||
+      !/[^A-Za-z0-9]/.test(form.password)
+    ) {
+      return setError("Mật khẩu phải gồm chữ hoa, chữ thường, số và ký tự đặc biệt");
+    }
+    if (!form.confirm) return setError("Vui lòng nhập xác nhận mật khẩu");
     if (form.password !== form.confirm) return setError("Mật khẩu xác nhận không khớp");
 
-    // Kiểm tra email đã được đăng ký chưa
-    const existing = dbService.getUserByIdentity(form.email.trim());
-    if (existing) {
-      return setError("Email này đã được đăng ký tài khoản. Vui lòng chọn Đăng nhập hoặc sử dụng email khác.");
+    // Email / SĐT đã tồn tại (TC_REG_03, 04, 24) - không phân biệt hoa thường
+    const dup = findDuplicate(email, phone);
+    if (dup === "email") {
+      return setError("Email đã tồn tại. Vui lòng chọn Đăng nhập hoặc sử dụng email khác.");
     }
+    if (dup === "phone") return setError("Số điện thoại đã tồn tại");
 
     setError("");
     setStage(2);
@@ -29,11 +73,18 @@ export default function Register({ go, goBack, onLogin }) {
     const code = otp.join("");
     if (code.length !== 6) return setError("Vui lòng nhập đủ 6 số OTP");
 
+    // TC_REG_27: bấm 2 lần liên tiếp không tạo tài khoản trùng
+    if (submittingRef.current) return;
+    if (findDuplicate(form.email.trim(), form.phone.trim())) {
+      return setError("Email hoặc số điện thoại đã tồn tại");
+    }
+    submittingRef.current = true;
+
     const newUser = dbService.addUser({
       fullName: form.fullName.trim(),
-      username: form.username || form.email.split("@")[0],
+      username: form.username || form.email.trim().split("@")[0],
       email: form.email.trim(),
-      phone: form.phone || "0912345678",
+      phone: form.phone.trim(),
       password: form.password,
       role: "customer",
       tier: "Thành viên",
@@ -94,7 +145,7 @@ export default function Register({ go, goBack, onLogin }) {
         </div>
 
         {stage === 1 ? (
-          <form onSubmit={submitForm}>
+          <form onSubmit={submitForm} noValidate>
             <div className="form-group">
               <label>Họ và tên *</label>
               <input

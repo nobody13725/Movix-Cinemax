@@ -1,7 +1,9 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { dbService, subscribeDb } from "../lib/supabaseClient.js";
 import Stepper from "../components/Stepper.jsx";
 import { FALLBACK_POSTER, FALLBACK_COMBO, handleImageError } from "../utils/imageFallback";
+
+const MAX_SEATS = 10; // TC_BK_08/09
 
 function formatVnd(n) {
   return (n || 0).toLocaleString("vi-VN") + "đ";
@@ -53,6 +55,8 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
   const [promoError, setPromoError] = useState("");
   const [availablePromos, setAvailablePromos] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("card");
+  const [bookingError, setBookingError] = useState("");
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     const list = dbService.getPromotions() || [];
@@ -101,9 +105,20 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
 
   function toggleSeat(seat) {
     if (seat.taken) return;
+    // TC_BK_09: không cho chọn vượt số ghế tối đa
+    if (!selectedSeats.includes(seat.id) && selectedSeats.length >= MAX_SEATS) {
+      return setBookingError(`Bạn chỉ được chọn tối đa ${MAX_SEATS} ghế cho một lần đặt vé`);
+    }
+    setBookingError("");
     setSelectedSeats((prev) =>
       prev.includes(seat.id) ? prev.filter((s) => s !== seat.id) : [...prev, seat.id]
     );
+  }
+
+  // TC_BK_32: suất chiếu đã bắt đầu thì không cho đặt
+  function isShowtimeStarted() {
+    const start = new Date(`${date}T${time}:00`);
+    return !isNaN(start.getTime()) && start.getTime() <= Date.now();
   }
 
   const seatTotal = selectedSeats.reduce((sum, id) => {
@@ -179,11 +194,47 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
 
   function goNext() {
     if (step === "seats") {
-      if (selectedSeats.length === 0) return;
+      // TC_BK_21: chưa chọn ghế
+      if (selectedSeats.length === 0) return setBookingError("Vui lòng chọn ít nhất 1 ghế để tiếp tục");
+      if (isShowtimeStarted()) return setBookingError("Suất chiếu này đã bắt đầu, không thể đặt vé");
+      setBookingError("");
       setStep("combo");
     } else if (step === "combo") {
+      setBookingError("");
       setStep("payment");
     } else {
+      if (submittingRef.current) return; // chặn bấm xác nhận nhiều lần
+
+      // Phải đăng nhập mới đặt được vé
+      if (!user?.id) {
+        return go("login", { redirect: "booking", redirectParams: params });
+      }
+      if (selectedSeats.length === 0) {
+        setStep("seats");
+        return setBookingError("Vui lòng chọn ít nhất 1 ghế để tiếp tục");
+      }
+      if (isShowtimeStarted()) return setBookingError("Suất chiếu này đã bắt đầu, không thể đặt vé");
+
+      // TC_BK_25: kiểm tra lại ghế với dữ liệu mới nhất, tránh 2 người đặt trùng
+      const freshShowtime = (dbService.getShowtimes() || []).find((st) => st.id === showtime?.id);
+      const freshBooked = freshShowtime?.seatsBooked || showtime?.seatsBooked || [];
+      const conflict = selectedSeats.filter((id) => freshBooked.includes(id));
+      if (conflict.length > 0) {
+        setSelectedSeats((prev) => prev.filter((id) => !conflict.includes(id)));
+        setStep("seats");
+        return setBookingError(`Ghế ${conflict.join(", ")} đã có người đặt. Vui lòng chọn ghế khác.`);
+      }
+
+      // TC_BK_19: mã khuyến mãi phải còn hợp lệ với tổng tiền hiện tại
+      if (appliedPromo) {
+        const check = dbService.validatePromo(appliedPromo.code, subtotal);
+        if (!check.valid) {
+          setAppliedPromo(null);
+          setPromoCode("");
+          return setPromoError(check.message || "Mã khuyến mãi không đủ điều kiện áp dụng");
+        }
+      }
+
       // Hoàn tất đặt vé (UC08, UC09) -> Lưu vào Supabase Database!
       const comboSummary = Object.entries(comboQty)
         .filter(([, q]) => q > 0)
@@ -203,7 +254,10 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
         price: seatIndex[sId]?.vip ? vipPrice : basePrice,
       }));
 
-      const newOrder = dbService.createOrder({
+      submittingRef.current = true;
+      let newOrder;
+      try {
+        newOrder = dbService.createOrder({
         userId: user?.id || `guest-${Date.now()}`,
         userName: user?.fullName || user?.name || "Khách hàng",
         email: user?.email || "",
@@ -230,7 +284,16 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
             : paymentMethod === "momo"
             ? "Ví điện tử MoMo"
             : "Chuyển khoản VietQR",
-      });
+        });
+      } catch (err) {
+        // TC_BK_31: thanh toán/đặt vé lỗi -> báo lỗi, giữ ghế để thanh toán lại
+        submittingRef.current = false;
+        return setBookingError("Thanh toán không thành công. Vui lòng thử lại.");
+      }
+      if (!newOrder) {
+        submittingRef.current = false;
+        return setBookingError("Thanh toán không thành công. Vui lòng thử lại.");
+      }
 
       go("bookingSuccess", {
         orderId: newOrder.id,
@@ -249,6 +312,7 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
   }
 
   function goBack() {
+    setBookingError("");
     if (step === "combo") {
       setStep("seats");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -694,10 +758,27 @@ export default function BookingFlow({ go, goBack: appGoBack, params, user }) {
             <span style={{ color: "var(--brand-600)" }}>{formatVnd(grandTotal)}</span>
           </div>
 
+          {bookingError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: 14,
+                padding: "8px 12px",
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: 6,
+                fontSize: 13,
+                color: "var(--red-500)",
+                fontWeight: 600,
+              }}
+            >
+              ✕ {bookingError}
+            </div>
+          )}
+
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
             <button
               className="btn btn-primary btn-block"
-              disabled={step === "seats" && selectedSeats.length === 0}
               onClick={goNext}
             >
               {step === "seats"

@@ -28,8 +28,14 @@ export default function Login({ go, goBack, onLogin, params }) {
 
   function submit(e) {
     e.preventDefault();
-    if (!form.identity.trim()) return setError("Vui lòng nhập email hoặc tên đăng nhập");
-    if (!form.password) return setError("Vui lòng nhập mật khẩu");
+    const rawId = form.identity.trim();
+    if (!rawId && !form.password.trim()) return setError("Vui lòng nhập email và mật khẩu");
+    if (!rawId) return setError("Vui lòng nhập email hoặc tên đăng nhập");
+    if (!form.password.trim()) return setError("Vui lòng nhập mật khẩu");
+    if (rawId.length > 254) return setError("Email không được vượt quá 254 ký tự");
+    if (rawId.includes("@") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawId)) {
+      return setError("Email không hợp lệ");
+    }
 
     const users = dbService.getUsers();
     const cleanId = form.identity.trim().toLowerCase();
@@ -42,18 +48,9 @@ export default function Login({ go, goBack, onLogin, params }) {
         u.phone === form.identity.trim()
     );
 
-    if (!user) {
-      return setError("Tài khoản không tồn tại trên hệ thống. Vui lòng kiểm tra lại hoặc nhấn Đăng ký.");
-    }
-
-    // Kiểm tra mật khẩu (hỗ trợ mật khẩu lưu trong DB, và mật khẩu mặc định 123 / 123456)
-    const validPassword =
-      user.password === form.password ||
-      form.password === "123" ||
-      form.password === "123456";
-
-    if (!validPassword) {
-      return setError("Mật khẩu không chính xác. Mật khẩu mẫu mặc định là '123'.");
+    // Dùng chung 1 thông báo cho sai email / sai mật khẩu / email chưa đăng ký
+    if (!user || user.password !== form.password) {
+      return setError("Email hoặc mật khẩu không chính xác.");
     }
 
     if (user.status === "Tạm khóa") {

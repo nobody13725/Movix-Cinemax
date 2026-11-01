@@ -8,9 +8,12 @@ export default function AdminMovies() {
   const [showModal, setShowModal] = useState(false);
   const [editingFilm, setEditingFilm] = useState(null);
   const [viewFilm, setViewFilm] = useState(null);
+  const [formError, setFormError] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
+    genre: "",
+    releaseDate: "",
     duration: 120,
     rating: 8.5,
     ageRating: "T13",
@@ -34,8 +37,11 @@ export default function AdminMovies() {
 
   const handleOpenAdd = () => {
     setEditingFilm(null);
+    setFormError("");
     setFormData({
       title: "",
+      genre: "",
+      releaseDate: "",
       duration: 120,
       rating: 8.5,
       ageRating: "T13",
@@ -54,8 +60,11 @@ export default function AdminMovies() {
 
   const handleOpenEdit = (film) => {
     setEditingFilm(film);
+    setFormError("");
     setFormData({
       title: film.title || "",
+      genre: Array.isArray(film.genre) ? film.genre.join(", ") : film.genre || "",
+      releaseDate: /^\d{4}-\d{2}-\d{2}$/.test(film.releaseDate || "") ? film.releaseDate : "",
       duration: film.duration || 120,
       rating: film.rating || 8.0,
       ageRating: film.ageRating || "T13",
@@ -73,6 +82,12 @@ export default function AdminMovies() {
   };
 
   const handleDelete = (id, title) => {
+    // TC_MOV_41: phim đã có suất chiếu thì không cho xóa
+    const hasShowtimes = (dbService.getShowtimes() || []).some((st) => st.filmId === id);
+    if (hasShowtimes) {
+      window.alert(`Không thể xóa phim "${title}" vì phim đã có suất chiếu. Vui lòng xóa các suất chiếu trước.`);
+      return;
+    }
     if (window.confirm(`Bạn có chắc muốn xóa phim "${title}"?`)) {
       dbService.deleteFilm(id);
     }
@@ -80,16 +95,65 @@ export default function AdminMovies() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) return;
-
+    const title = formData.title.trim();
+    const genre = String(formData.genre || "").trim();
     const poster = formData.posterUrl?.trim() || formData.thumbnail?.trim() || "";
+    const durationRaw = String(formData.duration ?? "").trim();
+    const duration = Number(durationRaw);
+
+    // TC_MOV_13: để trống toàn bộ
+    if (!title && !genre && !durationRaw && !formData.releaseDate && !poster) {
+      return setFormError("Vui lòng nhập các trường bắt buộc");
+    }
+
+    // Tên phim (TC_MOV_14, 20, 21)
+    if (!title) return setFormError("Vui lòng nhập Tên phim");
+    if (title.length > 255) return setFormError("Tên phim không được vượt quá 255 ký tự");
+
+    // Trùng tên (TC_MOV_29, 35) - không phân biệt hoa thường, bỏ qua chính bản ghi đang sửa
+    const duplicated = films.some(
+      (f) => f.id !== editingFilm?.id && (f.title || "").trim().toLowerCase() === title.toLowerCase()
+    );
+    if (duplicated) return setFormError("Tên phim đã tồn tại");
+
+    // Thể loại (TC_MOV_15, 34)
+    if (!genre) return setFormError("Vui lòng nhập Thể loại");
+
+    // Thời lượng (TC_MOV_16, 22, 23, 24, 25)
+    if (!durationRaw) return setFormError("Vui lòng nhập Thời lượng");
+    if (isNaN(duration)) return setFormError("Thời lượng phải là số");
+    if (duration <= 0) return setFormError("Thời lượng phải lớn hơn 0");
+    if (!Number.isInteger(duration)) return setFormError("Thời lượng phải là số nguyên (phút)");
+
+    // Ngày khởi chiếu (TC_MOV_17, 26)
+    if (!formData.releaseDate) return setFormError("Vui lòng nhập Ngày khởi chiếu");
+    const d = new Date(formData.releaseDate);
+    if (isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== formData.releaseDate) {
+      return setFormError("Ngày khởi chiếu không hợp lệ");
+    }
+
+    // Độ tuổi (TC_MOV_18)
+    if (!formData.ageRating) return setFormError("Vui lòng chọn Độ tuổi");
+
+    // Poster (TC_MOV_19, 27, 28)
+    if (!poster) return setFormError("Vui lòng nhập Poster");
+    if (!/^(https?:\/\/|data:image\/)/i.test(poster)) {
+      return setFormError("Poster chỉ chấp nhận tệp ảnh hoặc đường dẫn ảnh hợp lệ");
+    }
+    if (poster.startsWith("data:image") && poster.length * 0.75 > 5 * 1024 * 1024) {
+      return setFormError("Poster vượt quá dung lượng cho phép (tối đa 5 MB)");
+    }
+
+    setFormError("");
     const payload = {
       ...formData,
+      title,
+      genre,
       posterUrl: poster,
       thumbnail: poster || "🎬",
       backdropUrl: formData.backdropUrl?.trim() || "",
       trailer: formData.trailer?.trim() || "",
-      duration: Number(formData.duration) || 120,
+      duration,
       rating: Number(formData.rating) || 8.0,
       actors: typeof formData.actors === "string" ? formData.actors.split(",").map((s) => s.trim()).filter(Boolean) : formData.actors,
       directors: typeof formData.directors === "string" ? formData.directors.split(",").map((s) => s.trim()).filter(Boolean) : formData.directors,
@@ -103,10 +167,12 @@ export default function AdminMovies() {
     setShowModal(false);
   };
 
+  // TC_MOV_06: từ khóa chỉ có khoảng trắng -> hiển thị toàn bộ danh sách
+  const keyword = search.trim().toLowerCase();
   const filteredFilms = films.filter(
     (f) =>
-      f.title?.toLowerCase().includes(search.toLowerCase()) ||
-      f.status?.toLowerCase().includes(search.toLowerCase())
+      f.title?.toLowerCase().includes(keyword) ||
+      f.status?.toLowerCase().includes(keyword)
   );
 
   return (
@@ -256,11 +322,10 @@ export default function AdminMovies() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
             <h3>{editingFilm ? "Chỉnh sửa phim" : "Thêm phim mới"}</h3>
-            <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 16 }}>
+            <form onSubmit={handleSave} noValidate style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 16 }}>
               <div>
                 <label className="form-label">Tên phim *</label>
                 <input
-                  required
                   className="input-control"
                   style={{ width: "100%" }}
                   value={formData.title}
@@ -271,7 +336,30 @@ export default function AdminMovies() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label className="form-label">Thời lượng (phút)</label>
+                  <label className="form-label">Thể loại *</label>
+                  <input
+                    className="input-control"
+                    style={{ width: "100%" }}
+                    value={formData.genre}
+                    onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                    placeholder="Hành động, Phiêu lưu..."
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Ngày khởi chiếu *</label>
+                  <input
+                    type="date"
+                    className="input-control"
+                    style={{ width: "100%" }}
+                    value={formData.releaseDate}
+                    onChange={(e) => setFormData({ ...formData, releaseDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label className="form-label">Thời lượng (phút) *</label>
                   <input
                     type="number"
                     className="input-control"
@@ -318,6 +406,7 @@ export default function AdminMovies() {
                   >
                     <option value="Đang chiếu">Đang chiếu</option>
                     <option value="Sắp chiếu">Sắp chiếu</option>
+                    <option value="Ngừng chiếu">Ngừng chiếu</option>
                   </select>
                 </div>
               </div>
@@ -397,6 +486,23 @@ export default function AdminMovies() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
+
+              {formError && (
+                <div
+                  role="alert"
+                  style={{
+                    padding: "8px 12px",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    border: "1px solid rgba(239, 68, 68, 0.3)",
+                    borderRadius: 6,
+                    fontSize: 13,
+                    color: "var(--red-500)",
+                    fontWeight: 600,
+                  }}
+                >
+                  ✕ {formError}
+                </div>
+              )}
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 10 }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
